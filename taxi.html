@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حجز تكسي - معاملاتي</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .taxi-map-container {
+            position: relative;
+            width: 100%;
+            height: 350px;
+            background: #0f1015;
+            border-radius: 30px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            border: 1px solid var(--border-rgba);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .map-grid {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background-image:
+                radial-gradient(circle, rgba(197, 160, 33, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            animation: mapPulse 10s linear infinite;
+        }
+
+        @keyframes mapPulse {
+            from {
+                transform: translate(-20px, -20px);
+            }
+
+            to {
+                transform: translate(0, 0);
+            }
+        }
+
+        .driver-card-mini {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-rgba);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 12px;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .driver-card-mini:hover {
+            background: rgba(197, 160, 33, 0.05);
+            transform: scale(1.02);
+        }
+
+        .status-badge {
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 8px;
+            text-transform: uppercase;
+        }
+
+        .status-available {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .status-busy {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .search-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 11, 16, 0.8);
+            backdrop-filter: blur(5px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            text-align: center;
+        }
+
+        .radar {
+            width: 80px;
+            height: 80px;
+            border: 4px solid var(--gold);
+            border-radius: 50%;
+            position: relative;
+            margin-bottom: 20px;
+            animation: radarPing 1.5s ease-out infinite;
+        }
+
+        @keyframes radarPing {
+            0% {
+                transform: scale(0.5);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body class="royal-dark">
+    <nav class="glass-nav">
+        <a href="index.html" class="logo-container">
+            <div class="logo-box">
+                <img src="assets/logo.png" alt="معاملاتي">
+            </div>
+            <div style="font-weight: 950; font-size: 19px; color: white;">معاملاتي</div>
+        </a>
+        <div class="nav-links" id="nav-menu">
+            <a href="index.html">الرئيسية</a>
+            <a href="taxi.html" class="active">طلب تكسي 🚕</a>
+        </div>
+        <div id="nav-right"></div>
+    </nav>
+
+    <div class="container" style="padding-top: 50px;">
+        <div class="grid sidebar-layout">
+            <main>
+                <div class="mb-4">
+                    <h1 style="font-weight: 950; font-size: 2.8rem; color: white;">اطلب رحلتك الملكية</h1>
+                    <p style="color: var(--text-muted); font-weight: 700;">سائقون محترفون، رحلات آمنة، بلمسة واحدة</p>
+                </div>
+
+                <div class="taxi-map-container">
+                    <div class="map-grid"></div>
+                    <div id="search-overlay" class="search-overlay">
+                        <div class="radar"></div>
+                        <h4 style="color: white; font-weight: 950;">جاري البحث عن أقرب كابتن...</h4>
+                        <p style="color: var(--gold); font-size: 0.8rem; margin-top: 10px;">نقوم حالياً بمسح النطاق
+                            الجغرافي حولك</p>
+                    </div>
+                    <div id="map-info" style="z-index: 10; text-align: center; cursor: pointer;"
+                        onclick="detectLocation()">
+                        <i class="fas fa-location-crosshairs"
+                            style="font-size: 45px; color: var(--gold); filter: drop-shadow(0 0 15px var(--gold));"></i>
+                        <p style="color: white; font-weight: 800; margin-top: 15px;" id="current-location-text">جاري
+                            تحليل الإحداثيات...</p>
+                        <p style="color: var(--gold); font-size: 0.7rem; font-weight: 700;">(انقر للتحديث يدويًا)</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="grid grid-2" style="gap: 20px;">
+                        <div>
+                            <label class="form-label">نقطة الانطلاق</label>
+                            <div style="position: relative;">
+                                <i class="fas fa-circle-dot"
+                                    style="position: absolute; right: 15px; top: 18px; color: #10b981;"></i>
+                                <input type="text" id="pickup" class="form-input" style="padding-right: 45px;"
+                                    placeholder="موقعك الحالي">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label">الوجهة المقصودة</label>
+                            <div style="position: relative;">
+                                <i class="fas fa-location-arrow"
+                                    style="position: absolute; right: 15px; top: 18px; color: #ef4444;"></i>
+                                <input type="text" id="destination" class="form-input" style="padding-right: 45px;"
+                                    placeholder="أين تذهب؟">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-3" style="gap: 15px; margin-top: 20px;">
+                        <div class="option-card" onclick="selectType('BASIC')" id="type-BASIC"
+                            style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 15px; border: 1px solid var(--border-rgba); cursor: pointer; text-align: center;">
+                            <i class="fas fa-car" style="font-size: 20px; color: var(--gold); margin-bottom: 8px;"></i>
+                            <p style="font-size: 0.8rem; font-weight: 900; color: white; margin: 0;">اقتصادية</p>
+                        </div>
+                        <div class="option-card active" onclick="selectType('VIP')" id="type-VIP"
+                            style="background: rgba(197, 160, 33, 0.1); padding: 15px; border-radius: 15px; border: 1px solid var(--gold); cursor: pointer; text-align: center;">
+                            <i class="fas fa-crown"
+                                style="font-size: 20px; color: var(--gold); margin-bottom: 8px;"></i>
+                            <p style="font-size: 0.8rem; font-weight: 900; color: white; margin: 0;">ملكية (VIP)</p>
+                        </div>
+                        <div class="option-card" onclick="selectType('LARGE')" id="type-LARGE"
+                            style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 15px; border: 1px solid var(--border-rgba); cursor: pointer; text-align: center;">
+                            <i class="fas fa-van-shuttle"
+                                style="font-size: 20px; color: var(--gold); margin-bottom: 8px;"></i>
+                            <p style="font-size: 0.8rem; font-weight: 900; color: white; margin: 0;">عائلية</p>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="startSearch()"
+                        style="width: 100%; margin-top: 30px; padding: 20px; font-size: 1.1rem; border-radius: 25px;">
+                        طلب الرحلة الآن <i class="fas fa-bolt" style="margin-right: 10px;"></i>
+                    </button>
+                </div>
+            </main>
+
+            <aside>
+                <div class="card" style="height: 100%;">
+                    <h3
+                        style="font-weight: 950; color: white; margin-bottom: 25px; border-bottom: 1px solid var(--border-rgba); padding-bottom: 15px;">
+                        السائقون المتوفرون</h3>
+                    <div id="drivers-list">
+                        <!-- Dynamic -->
+                        <div style="text-align: center; color: var(--text-muted); padding: 50px 0;">
+                            <i class="fas fa-satellite" style="font-size: 30px; margin-bottom: 15px;"></i>
+                            <p style="font-weight: 700; font-size: 0.85rem;">جاري مسح المنطقة...</p>
+                        </div>
+                    </div>
+
+                    <div
+                        style="margin-top: 30px; padding: 20px; background: rgba(197, 160, 33, 0.05); border-radius: 20px; border: 1px dashed var(--gold);">
+                        <p
+                            style="color: var(--gold); font-size: 0.75rem; font-weight: 800; line-height: 1.6; margin: 0;">
+                            💡 ملاحظة: يتم حساب تكلفة الرحلة بناءً على المسافة ونوع المركبة. الدفع يتم نقداً للسائق أو
+                            عبر محفظتك الملكية.
+                        </p>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        let selectedType = 'VIP';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDrivers();
+            detectLocation(); // Real-time GPS Detection
+        });
+
+        function detectLocation() {
+            const locText = document.getElementById('current-location-text');
+            const pickupInput = document.getElementById('pickup');
+
+            if ("geolocation" in navigator) {
+                locText.innerText = "جاري تحديد موقعك عبر الأقمار الصناعية...";
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        // In a real app, we'd use reverse geocoding here to get a string address
+                        // For now, we use precise coordinates to ensure 'no errors' as requested
+                        const geoString = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+                        locText.innerText = `📍 تم التحديد بدقة: ${geoString}`;
+                        pickupInput.value = `موقع GPS (${geoString})`;
+
+                        Notify.show("نظام النقل", "تم تحديد موقعك الحالي بدقة عالية 🛰️", "fas fa-location-crosshairs");
+                    },
+                    (error) => {
+                        console.error(error);
+                        locText.innerText = "⚠️ فشل تحديد الموقع (يرجى السماح بالوصول)";
+                        Notify.show("تنبيه", "يرجى تفعيل GPS أو إدخال عنوانك يدوياً لضمان دقة الطلب", "fas fa-warning");
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            } else {
+                locText.innerText = "⚠️ متصفحك لا يدعم تحديد الموقع الجغرافي";
+            }
+        }
+
+        function selectType(type) {
+            document.querySelectorAll('.option-card').forEach(c => {
+                c.style.background = 'rgba(255,255,255,0.02)';
+                c.style.borderColor = 'var(--border-rgba)';
+            });
+            const selected = document.getElementById(`type-${type}`);
+            selected.style.background = 'rgba(197, 160, 33, 0.1)';
+            selected.style.borderColor = 'var(--gold)';
+            selectedType = type;
+        }
+
+        function renderDrivers() {
+            const list = document.getElementById('drivers-list');
+            const drivers = Store.getData('taxi_drivers') || [];
+
+            if (drivers.length === 0) {
+                list.innerHTML = `<p style="text-align:center; color:gray;">لا يوجد سائقين حالياً</p>`;
+                return;
+            }
+
+            list.innerHTML = drivers.map(d => `
+                <div class="driver-card-mini">
+                    <img src="${d.avatar}" style="width: 45px; height: 45px; border-radius: 12px; border: 2px solid var(--border-rgba);">
+                    <div style="flex: 1;">
+                        <h5 style="color: white; font-weight: 900; margin: 0; font-size: 0.85rem;">${d.name}</h5>
+                        <p style="color: var(--text-muted); font-size: 0.65rem; font-weight: 700; margin: 2px 0;">${d.carType} • ${d.carPlate}</p>
+                        <p style="color: var(--gold); font-size: 0.65rem; font-weight: 800;">⭐ ${d.rating} (${d.trips} رحلة)</p>
+                    </div>
+                    <span class="status-badge ${d.status === 'AVAILABLE' ? 'status-available' : 'status-busy'}">
+                        ${d.status === 'AVAILABLE' ? 'متوفر' : 'مشغول'}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function startSearch() {
+            const dest = document.getElementById('destination').value;
+            if (!dest) {
+                Notify.show("تنبيه", "يرجى تحديد وجهة الرحلة أولاً", "fas fa-warning");
+                return;
+            }
+
+            document.getElementById('search-overlay').style.display = 'flex';
+
+            // Simulate searching process
+            setTimeout(() => {
+                const drivers = (Store.getData('taxi_drivers') || []).filter(d => d.status === 'AVAILABLE');
+                if (drivers.length > 0) {
+                    const bestDriver = drivers[0]; // Sort by logic would go here
+                    document.getElementById('search-overlay').innerHTML = `
+                        <div style="background: var(--bg-dark); padding: 30px; border-radius: 30px; border: 2px solid var(--gold); max-width: 320px;">
+                            <img src="${bestDriver.avatar}" style="width: 80px; height: 80px; border-radius: 20px; border: 3px solid var(--gold); margin-bottom: 15px;">
+                            <h3 style="color: white; font-weight: 950; margin-bottom: 10px;">تم العثور على الكابتن!</h3>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">الابتن ${bestDriver.name} في طريقه إليك الآن</p>
+                            <button class="btn btn-primary" onclick="proceedToOrder('${bestDriver.id}')" style="width: 100%; border-radius: 15px;">متابعة الرحلة</button>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('search-overlay').innerHTML = `
+                        <div style="background: var(--bg-dark); padding: 30px; border-radius: 30px; border: 2px solid #ef4444; max-width: 320px;">
+                            <i class="fas fa-times-circle" style="font-size: 50px; color: #ef4444; margin-bottom: 15px;"></i>
+                            <h3 style="color: white; font-weight: 950; margin-bottom: 10px;">عذراً، لا يوجد سائق متاح</h3>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">جميع السائقين في منطقتك منشغلون حالياً. حاول ثانية بعد قليل.</p>
+                            <button class="btn" onclick="location.reload()" style="width: 100%; background: #334155; color: white; border-radius: 15px;">إغلاق</button>
+                        </div>
+                    `;
+                }
+            }, 3000);
+        }
+
+        function proceedToOrder(driverId) {
+            // Create a pseudo order
+            const orders = Store.getData('taxi_orders') || [];
+            const newOrder = {
+                id: 'TX-' + Math.floor(1000 + Math.random() * 9000),
+                driverId: driverId,
+                status: 'ACCEPTED',
+                pickup: document.getElementById('pickup').value,
+                destination: document.getElementById('destination').value,
+                type: selectedType,
+                timestamp: new Date().toISOString()
+            };
+            orders.unshift(newOrder);
+            Store.setData('taxi_orders', orders);
+
+            window.location.href = `taxi-order.html?id=${newOrder.id}`;
+        }
+    </script>
+</body>
+
+</html>

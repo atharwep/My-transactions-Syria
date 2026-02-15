@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الملف الشخصي - بوابة الخدمات العامة</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg-royal: #0a0b10;
+            --card-royal: rgba(255, 255, 255, 0.03);
+            --gold: #c5a021;
+        }
+
+        body {
+            background-color: var(--bg-royal);
+            color: white;
+            padding-bottom: 100px;
+        }
+
+        .profile-container {
+            max-width: 600px;
+            margin: 100px auto 40px;
+            padding: 0 20px;
+        }
+
+        .avatar-section {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .avatar-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .avatar-img {
+            width: 130px;
+            height: 130px;
+            border-radius: 40px;
+            border: 4px solid var(--gold);
+            object-fit: cover;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .avatar-edit {
+            position: absolute;
+            bottom: -10px;
+            right: -10px;
+            background: var(--gold);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            cursor: pointer;
+            border: 4px solid var(--bg-royal);
+            transition: 0.3s;
+        }
+
+        .avatar-edit:hover {
+            transform: scale(1.1);
+        }
+
+        .qr-section {
+            background: white;
+            padding: 25px;
+            border-radius: 35px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        #qrcode {
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .qr-title {
+            color: #000;
+            font-weight: 950;
+            margin-bottom: 5px;
+        }
+
+        .qr-subtitle {
+            color: #64748B;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .settings-card {
+            background: var(--card-royal);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 30px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .settings-title {
+            color: var(--gold);
+            font-weight: 900;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .p-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px;
+            color: white;
+            font-weight: 700;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .p-input:focus {
+            border-color: var(--gold);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .security-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 18px;
+            margin-bottom: 10px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #334155;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--gold);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(24px);
+        }
+
+        .btn-save {
+            width: 100%;
+            background: var(--gold);
+            color: black;
+            padding: 18px;
+            border-radius: 20px;
+            font-weight: 950;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+            box-shadow: 0 10px 30px rgba(197, 160, 33, 0.3);
+            transition: 0.3s;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(197, 160, 33, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="glass-nav">
+        <a href="index.html" class="logo-container" style="text-decoration: none; color: white;">
+            <div class="logo-box">
+                <img src="assets/logo.png" alt="معاملاتي">
+            </div>
+            <div style="font-weight: 950; font-size: 19px; color: white;">معاملاتي</div>
+        </a>
+        <div id="nav-right" style="display: flex; align-items: center; gap: 15px;"></div>
+    </nav>
+
+    <div class="profile-container">
+        <!-- Avatar Section -->
+        <div class="avatar-section">
+            <div class="avatar-wrapper">
+                <img id="profile-avatar" src="assets/nuser.png" class="avatar-img" alt="Avatar">
+                <label for="avatar-upload" class="avatar-edit">
+                    <i class="fas fa-camera"></i>
+                </label>
+                <input type="file" id="avatar-upload" style="display: none;" accept="image/*"
+                    onchange="handleAvatarUpload(event)">
+            </div>
+            <h2 id="profile-name" style="margin-top: 20px; font-weight: 950; font-size: 1.8rem;">---</h2>
+            <p id="profile-phone" style="color: var(--gold); font-weight: 800; font-size: 0.9rem;">09xxxxxxxx</p>
+        </div>
+
+        <!-- My QR Code -->
+        <div class="qr-section">
+            <div id="qrcode"></div>
+            <h4 class="qr-title">باركود المعاملات الآمنة</h4>
+            <p class="qr-subtitle">استخدم هذا الباركود للشحن أو السحب السريع لدى الوكلاء</p>
+        </div>
+
+        <!-- Security Settings -->
+        <div class="settings-card">
+            <h3 class="settings-title"><i class="fas fa-shield-halved"></i> الأمان والخصوصية</h3>
+
+            <div class="security-item">
+                <div>
+                    <p style="font-weight: 800; margin: 0;">تفعيل البصمة (Biometrics)</p>
+                    <p style="font-size: 0.7rem; color: #94a3b8; margin: 0;">تأمين السحب والإيداع ببصمة الإصبع</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="bio-auth" onchange="toggleBiometrics(this)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="security-item">
+                <div>
+                    <p style="font-weight: 800; margin: 0;">رمز PIN للأمان</p>
+                    <p style="font-size: 0.7rem; color: #94a3b8; margin: 0;">طلب رمز التعريف عند كل عملية مالية</p>
+                </div>
+                <button onclick="setPinCode()"
+                    style="background: rgba(255,255,255,0.05); border: none; color: var(--gold); font-weight: 900; padding: 8px 15px; border-radius: 10px; cursor: pointer;">ضبط
+                    الرمز</button>
+            </div>
+        </div>
+
+        <!-- Account Settings -->
+        <form class="settings-card" onsubmit="updateProfile(event)">
+            <h3 class="settings-title"><i class="fas fa-user-gear"></i> إعدادات الحساب</h3>
+
+            <div class="form-group">
+                <label class="form-label">الاسم الكامل</label>
+                <input type="text" id="edit-name" class="p-input" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">كلمة المرور الجديدة</label>
+                <input type="password" id="edit-pass" class="p-input" placeholder="اتركها فارغة إذا لا تود التغيير">
+            </div>
+
+            <button type="submit" class="btn-save">حفظ التغييرات الملكية</button>
+        </form>
+
+        <button onclick="Auth.logout()" class="btn"
+            style="width: 100%; background: #dc2626; color: white; padding: 18px; border-radius: 20px; font-weight: 950; border: none; cursor: pointer;">تسجيل
+            الخروج 🚪</button>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!Store.user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Load Info
+            document.getElementById('profile-name').innerText = Store.user.name;
+            document.getElementById('profile-phone').innerText = Store.user.phone;
+            document.getElementById('profile-avatar').src = Store.user.avatar || 'assets/nuser.png';
+            document.getElementById('edit-name').value = Store.user.name;
+
+            // Generate QR Code
+            new QRCode(document.getElementById("qrcode"), {
+                text: JSON.stringify({
+                    id: Store.user.id,
+                    phone: Store.user.phone,
+                    type: 'WUSUL_USER_WALLET'
+                }),
+                width: 180,
+                height: 180,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            // Set Initial Toggles
+            document.getElementById('bio-auth').checked = localStorage.getItem('wusul_bio_auth') === 'true';
+        });
+
+        async function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const base64 = e.target.result;
+                document.getElementById('profile-avatar').src = base64;
+
+                // Update Store
+                const users = Store.getUsers();
+                const uIdx = users.findIndex(u => u.phone === Store.user.phone);
+                if (uIdx !== -1) {
+                    users[uIdx].avatar = base64;
+                    Store.setUsers(users);
+                    Store.user.avatar = base64;
+                    localStorage.setItem('wusul_user', JSON.stringify(Store.user));
+                    Notify.show("نجاح", "تم تحديث الصورة الشخصية بنجاح ✨", "fas fa-camera");
+                    UI.updateNavbar();
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function updateProfile(e) {
+            e.preventDefault();
+            const newName = document.getElementById('edit-name').value;
+            const newPass = document.getElementById('edit-pass').value;
+
+            const users = Store.getUsers();
+            const uIdx = users.findIndex(u => u.phone === Store.user.phone);
+
+            if (uIdx !== -1) {
+                users[uIdx].name = newName;
+                if (newPass) users[uIdx].password = newPass;
+
+                Store.setUsers(users);
+                Store.user.name = newName;
+                localStorage.setItem('wusul_user', JSON.stringify(Store.user));
+
+                Notify.show("نجاح", "تم تحديث بيانات الحساب بنجاح ✅", "fas fa-check-circle");
+                setTimeout(() => window.location.reload(), 2000);
+            }
+        }
+
+        function toggleBiometrics(el) {
+            localStorage.setItem('wusul_bio_auth', el.checked);
+            if (el.checked) {
+                Notify.show("نظام الأمان", "تم تفعيل حماية البصمة لعمليات السحب والإيداع 🛡️", "fas fa-fingerprint");
+            } else {
+                Notify.show("نظام الأمان", "تم إيقاف حماية البصمة. يرجى توخي الحذر.", "fas fa-shield-alt");
+            }
+        }
+
+        function setPinCode() {
+            const pin = prompt("أدخل رمز PIN الجديد المكون من 4 أرقام:");
+            if (pin && pin.length === 4 && !isNaN(pin)) {
+                localStorage.setItem(`wusul_pin_${Store.user.id}`, pin);
+                Notify.show("نظام الأمان", "تم ضبط رمز الـ PIN بنجاح. سيطلب منك عند الدفع أو السحب 🔒", "fas fa-key");
+            } else if (pin) {
+                alert("يرجى إدخال 4 أرقام فقط.");
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة حساب العائلة - معاملاتي</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .family-member-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-rgba);
+            border-radius: 30px;
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            transition: 0.3s;
+        }
+
+        .family-member-card:hover {
+            border-color: var(--gold);
+            background: rgba(197, 160, 33, 0.05);
+        }
+
+        .member-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .member-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+        }
+
+        .role-tag {
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            background: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+
+<body class="royal-dark">
+    <nav class="glass-nav">
+        <a href="index.html" class="logo-container">
+            <div class="logo-box">
+                <img src="assets/logo.png" alt="معاملاتي">
+            </div>
+            <div style="font-weight: 950; font-size: 19px; color: white;">معاملاتي</div>
+        </a>
+        <div class="nav-links">
+            <a href="dashboard.html">لوحة التحكم</a>
+            <a href="family.html" class="active">العائلة 👨‍👩‍👧‍👦</a>
+        </div>
+        <div id="nav-right"></div>
+    </nav>
+
+    <div class="container" style="max-width: 900px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+            <div>
+                <h1 style="color: white; font-weight: 950; font-size: 2.5rem; margin-bottom: 5px;">حساب العائلة</h1>
+                <p style="color: var(--text-muted); font-weight: 700;">أضف أفراد عائلتك لمتابعة حالتهم الصحية وتلقي
+                    تنبيهات الطوارئ.</p>
+            </div>
+            <button class="btn btn-primary" onclick="showAddModal()">
+                <i class="fas fa-plus"></i> إضافة فرد
+            </button>
+        </div>
+
+        <div id="members-list">
+            <!-- Sample Member -->
+            <div class="family-member-card">
+                <div class="member-info">
+                    <img src="assets/nuser.png" class="member-avatar">
+                    <div>
+                        <h3 style="color: white; font-weight: 950; margin: 0;">أحمد (الأب)</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; margin: 4px 0;">0934455667</p>
+                        <span class="role-tag" style="color: #4A90E2;">مسؤول أساسي</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-outline" style="padding: 10px 20px; font-size: 0.8rem;"
+                        onclick="Notify.show('تتبع','جاري عرض موقع أحمد الآن','fas fa-location-arrow')">تتبع</button>
+                    <button class="btn btn-primary"
+                        style="padding: 10px 20px; font-size: 0.8rem; background: #ef4444; color: white; border: none;">طوارئ</button>
+                </div>
+            </div>
+
+            <div class="family-member-card">
+                <div class="member-info">
+                    <img src="assets/nuser.png" class="member-avatar">
+                    <div>
+                        <h3 style="color: white; font-weight: 950; margin: 0;">ليلى أحمد (ابنة)</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; margin: 4px 0;">0955667788</p>
+                        <span class="role-tag">متابع</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-outline" style="padding: 10px 20px; font-size: 0.8rem;"
+                        onclick="Notify.show('تتبع','جاري عرض موقع ليلى الآن','fas fa-location-arrow')">تتبع</button>
+                    <button class="btn btn-primary" style="padding: 10px 20px; font-size: 0.8rem;">سجل طبي</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 50px;">
+            <h3 style="color: var(--gold); font-weight: 950; margin-bottom: 20px;">كيف يعمل نظام العائلة؟</h3>
+            <ul style="color: var(--text-muted); font-weight: 700; line-height: 2;">
+                <li><i class="fas fa-check-circle" style="color: var(--gold); margin-left: 10px;"></i> مشاركة الموقع
+                    التلقائية في حالة الطوارئ.</li>
+                <li><i class="fas fa-check-circle" style="color: var(--gold); margin-left: 10px;"></i> حجز مواعيد طبية
+                    للأبناء والوالدين من حساب واحد.</li>
+                <li><i class="fas fa-check-circle" style="color: var(--gold); margin-left: 10px;"></i> استقبال تنبيهات
+                    بانتهاء صلاحية أدوية أو مواعيد تطعيم.</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="js/notifications.js"></script>
+    <script>
+        function showAddModal() {
+            Notify.show("إضافة فرد", "يرجى كتابة رقم الهاتف وسيصل طلب انضمام للعضو الجديد.", "fas fa-user-plus");
+        }
+    </script>
+</body>
+
+</html>

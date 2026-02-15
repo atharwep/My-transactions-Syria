@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المشافي والمراكز الطبية - معاملاتي</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .hospital-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-rgba);
+            border-radius: 30px;
+            padding: 25px;
+            margin-bottom: 25px;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hospital-card:hover {
+            background: rgba(197, 160, 33, 0.05);
+            border-color: var(--gold);
+            transform: translateY(-5px);
+        }
+
+        .status-pill {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            padding: 6px 15px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 800;
+        }
+
+        .status-open {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .status-emergency {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .status-closed {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .service-tag {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            padding: 5px 12px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: inline-block;
+            margin: 0 0 8px 8px;
+        }
+
+        .hospital-type {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--gold);
+            background: rgba(197, 160, 33, 0.1);
+            padding: 4px 10px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .action-icon-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            transition: 0.3s;
+            cursor: pointer;
+            border: 1px solid var(--border-rgba);
+        }
+
+        .action-icon-btn:hover {
+            background: var(--gold);
+            color: black;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+
+<body class="royal-dark">
+    <nav class="glass-nav">
+        <a href="index.html" class="logo-container">
+            <div class="logo-box">
+                <img src="assets/logo.png" alt="معاملاتي">
+            </div>
+            <div style="font-weight: 950; font-size: 19px; color: white;">معاملاتي</div>
+        </a>
+        <div class="nav-links" id="nav-menu">
+            <a href="index.html">الرئيسية</a>
+            <a href="hospitals.html" class="active">المشافي 🏥</a>
+            <a href="pharmacies.html">الصيدليات</a>
+        </div>
+        <div id="nav-right"></div>
+    </nav>
+
+    <div class="container" style="padding-top: 50px;">
+        <div class="mb-5 text-center">
+            <h1 style="font-weight: 950; font-size: 3rem; color: white; margin-bottom: 15px;">دليل المشافي والطوارئ</h1>
+            <p style="color: var(--text-muted); font-weight: 700; font-size: 1.1rem; max-width: 600px; margin: 0 auto;">
+                ابحث عن أقرب مشفى، تعرف على الخدمات المتوفرة، وتواصل فوراً في الحالات العاجلة.</p>
+        </div>
+
+        <div class="grid sidebar-layout">
+            <main>
+                <div class="card" style="margin-bottom: 30px; padding: 20px;">
+                    <div class="grid grid-3" style="gap: 15px;">
+                        <div>
+                            <label class="form-label" style="font-size: 0.7rem;">بحث بالاسم</label>
+                            <input type="text" id="hospital-search" class="form-input" style="border-radius: 12px;"
+                                placeholder="ابحث باسم المشفى..." onkeyup="filterHospitals()">
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size: 0.7rem;">المحافظة</label>
+                            <select id="gov-filter" class="form-input" style="border-radius: 12px;"
+                                onchange="LocationHelper.updateCities(this.value, 'city-filter'); filterHospitals();">
+                                <option value="">كل المحافظات</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size: 0.7rem;">المنطقة</label>
+                            <select id="city-filter" class="form-input" style="border-radius: 12px;"
+                                onchange="filterHospitals()">
+                                <option value="">كل المناطق</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="hospitals-list">
+                    <!-- Dynamic Loading -->
+                </div>
+            </main>
+
+            <aside>
+                <div class="card">
+                    <h3 style="font-weight: 950; color: white; margin-bottom: 25px;">تصفية سريعة</h3>
+
+                    <div class="form-group">
+                        <label class="form-label">نوع المشفى</label>
+                        <select id="type-filter" class="form-input" onchange="filterHospitals()">
+                            <option value="ALL">الكل</option>
+                            <option value="PRIVATE">خاص</option>
+                            <option value="GOV">حكومي</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">حالة الدوام</label>
+                        <select id="status-filter" class="form-input" onchange="filterHospitals()">
+                            <option value="ALL">الكل</option>
+                            <option value="OPEN">مفتوح الآن</option>
+                            <option value="EMERGENCY">طوارئ فقط</option>
+                        </select>
+                    </div>
+
+                    <div
+                        style="margin-top: 30px; padding: 20px; background: rgba(197, 160, 33, 0.05); border-radius: 20px; border: 1px dashed var(--gold); text-align: center;">
+                        <i class="fas fa-phone-volume"
+                            style="font-size: 30px; color: var(--gold); margin-bottom: 15px;"></i>
+                        <h4 style="color: white; font-weight: 900; margin-bottom: 10px;">إسعاف وطوارئ</h4>
+                        <a href="tel:110"
+                            style="font-size: 1.5rem; color: var(--gold); font-weight: 950; text-decoration: none;">110</a>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/syria-data.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            LocationHelper.initGovernorates('gov-filter');
+            renderHospitals(Store.getData('hospitals') || []);
+        });
+
+        function renderHospitals(data) {
+            const list = document.getElementById('hospitals-list');
+            if (data.length === 0) {
+                list.innerHTML = `<div class="card text-center" style="padding: 50px;"><p style="color:gray;">لا توجد نتائج تطابق بحثك</p></div>`;
+                return;
+            }
+
+            list.innerHTML = data.map(h => `
+                <div class="hospital-card">
+                    <span class="status-pill ${getStatusClass(h.status)}">
+                        ${getStatusText(h.status)}
+                    </span>
+                    
+                    <span class="hospital-type">${h.type === 'PRIVATE' ? 'مشفى خاص' : 'مشفى حكومي'}</span>
+                    <h2 style="color: white; font-weight: 950; margin-bottom: 10px;">${h.name}</h2>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 700; margin-bottom: 15px;">
+                        <i class="fas fa-location-dot" style="color: var(--gold); margin-left: 8px;"></i>${h.location}
+                    </p>
+
+                    <div style="margin-bottom: 20px;">
+                        ${h.services.map(s => `<span class="service-tag">${s}</span>`).join('')}
+                    </div>
+
+                    <div style="display: flex; gap: 12px; align-items: center; border-top: 1px solid var(--border-rgba); padding-top: 20px;">
+                        <a href="tel:${h.phone}" class="btn btn-primary" style="flex: 1; border-radius: 15px; padding: 12px;">
+                            <i class="fas fa-phone-alt" style="margin-left: 8px;"></i>اتصال فوري
+                        </a>
+                        <div class="action-icon-btn" onclick="openMap(${h.coordinates.lat}, ${h.coordinates.lng})" title="الموقع على الخريطة">
+                            <i class="fas fa-map-marked-alt"></i>
+                        </div>
+                        <div class="action-icon-btn" onclick="shareHospital('${h.name}')" title="مشاركة">
+                            <i class="fas fa-share-nodes"></i>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getStatusClass(status) {
+            if (status === 'OPEN') return 'status-open';
+            if (status === 'EMERGENCY') return 'status-emergency';
+            return 'status-closed';
+        }
+
+        function getStatusText(status) {
+            if (status === 'OPEN') return '● مفتوح الآن';
+            if (status === 'EMERGENCY') return '● طوارئ فقط';
+            return '● مغلق حالياً';
+        }
+
+        function filterHospitals() {
+            const query = document.getElementById('hospital-search').value.toLowerCase();
+            const type = document.getElementById('type-filter').value;
+            const status = document.getElementById('status-filter').value;
+            const gov = document.getElementById('gov-filter').value;
+            const city = document.getElementById('city-filter').value;
+
+            const allHospitals = Store.getData('hospitals') || [];
+
+            const filtered = allHospitals.filter(h => {
+                const matchesSearch = h.name.toLowerCase().includes(query) ||
+                    h.services.some(s => s.toLowerCase().includes(query));
+                const matchesType = type === 'ALL' || h.type === type;
+                const matchesStatus = status === 'ALL' || h.status === status;
+                const matchesGov = !gov || h.governorate === gov;
+                const matchesCity = !city || h.city === city;
+
+                return matchesSearch && matchesType && matchesStatus && matchesGov && matchesCity;
+            });
+
+            renderHospitals(filtered);
+        }
+
+        function openMap(lat, lng) {
+            window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+        }
+
+        function shareHospital(name) {
+            Notify.show("مباشرة", `تم نسخ رابط موقع ${name} لإرساله عبر واتساب`, "fas fa-share-nodes");
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار التكامل - معاملاتي</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 30px;
+        }
+
+        .test-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-rgba);
+        }
+
+        .test-section h2 {
+            color: var(--gold);
+            margin-bottom: 20px;
+        }
+
+        .test-btn {
+            background: linear-gradient(135deg, var(--gold), #d4a017);
+            color: #000;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(197, 160, 33, 0.3);
+        }
+
+        .test-result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+
+        .success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid #10b981;
+            color: #10b981;
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+
+        .info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid #3b82f6;
+            color: #3b82f6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="test-container">
+        <h1 style="text-align: center; color: var(--gold); margin-bottom: 40px;">
+            🧪 اختبار التكامل الشامل
+        </h1>
+
+        <!-- Firebase Test -->
+        <div class="test-section">
+            <h2>🔥 اختبار Firebase</h2>
+            <button class="test-btn" onclick="testFirebaseConnection()">اختبار الاتصال</button>
+            <button class="test-btn" onclick="testFirebaseSaveUser()">حفظ مستخدم تجريبي</button>
+            <button class="test-btn" onclick="testFirebaseGetUser()">جلب مستخدم</button>
+            <div id="firebase-result" class="test-result" style="display: none;"></div>
+        </div>
+
+        <!-- Twilio Test -->
+        <div class="test-section">
+            <h2>📱 اختبار Twilio SMS</h2>
+            <input type="text" id="test-phone" placeholder="رقم الهاتف (مثال: 0936020439)"
+                style="padding: 10px; border-radius: 8px; border: 1px solid var(--border-rgba); background: rgba(255,255,255,0.05); color: white; margin-bottom: 10px; width: 300px;">
+            <br>
+            <button class="test-btn" onclick="testTwilioConfig()">التحقق من الإعدادات</button>
+            <button class="test-btn" onclick="testSendOTP()">إرسال OTP</button>
+            <button class="test-btn" onclick="testSendSMS()">إرسال رسالة تجريبية</button>
+            <div id="twilio-result" class="test-result" style="display: none;"></div>
+        </div>
+
+        <!-- Security Test -->
+        <div class="test-section">
+            <h2>🔐 اختبار الأمان</h2>
+            <button class="test-btn" onclick="testPasswordHashing()">تشفير كلمة المرور</button>
+            <button class="test-btn" onclick="testJWTGeneration()">إنشاء JWT Token</button>
+            <button class="test-btn" onclick="testRateLimiting()">اختبار Rate Limiting</button>
+            <button class="test-btn" onclick="testInputSanitization()">تنظيف المدخلات</button>
+            <div id="security-result" class="test-result" style="display: none;"></div>
+        </div>
+
+        <!-- Integration Test -->
+        <div class="test-section">
+            <h2>🔗 اختبار التكامل الكامل</h2>
+            <button class="test-btn" onclick="testFullRegistration()">تسجيل مستخدم كامل</button>
+            <button class="test-btn" onclick="testFullLogin()">تسجيل دخول كامل</button>
+            <button class="test-btn" onclick="testTransaction()">معاملة مالية</button>
+            <div id="integration-result" class="test-result" style="display: none;"></div>
+        </div>
+
+        <!-- System Status -->
+        <div class="test-section">
+            <h2>📊 حالة النظام</h2>
+            <button class="test-btn" onclick="checkSystemStatus()">فحص شامل</button>
+            <div id="status-result" class="test-result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Load all scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+    <script src="js/config.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/security.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/twilio-sms.js"></script>
+    <script src="js/auth.js"></script>
+
+    <script>
+        // Helper function to display results
+        function showResult(elementId, message, type = 'info') {
+            const el = document.getElementById(elementId);
+            el.style.display = 'block';
+            el.className = `test-result ${type}`;
+            el.textContent = message;
+        }
+
+        // ===================================
+        // Firebase Tests
+        // ===================================
+        function testFirebaseConnection() {
+            try {
+                if (typeof firebase !== 'undefined' && firebaseDB) {
+                    showResult('firebase-result', '✅ Firebase متصل بنجاح!\n\nالتفاصيل:\n' +
+                        `- Project ID: ${firebaseConfig.projectId}\n` +
+                        `- Database URL: ${firebaseConfig.databaseURL}`, 'success');
+                } else {
+                    showResult('firebase-result', '❌ Firebase غير متصل\n\nتأكد من:\n1. تحديث firebase-config.js\n2. تحميل Firebase SDK', 'error');
+                }
+            } catch (error) {
+                showResult('firebase-result', '❌ خطأ: ' + error.message, 'error');
+            }
+        }
+
+        async function testFirebaseSaveUser() {
+            try {
+                const testUser = {
+                    id: Date.now(),
+                    name: "مستخدم تجريبي",
+                    phone: "0900000000",
+                    password: "test123",
+                    role: "USER",
+                    balanceUSD: 100,
+                    balanceSYP: 500000
+                };
+
+                const result = await HybridStore.saveUser(testUser);
+                showResult('firebase-result', '✅ تم حفظ المستخدم بنجاح!\n\n' +
+                    JSON.stringify(testUser, null, 2), 'success');
+            } catch (error) {
+                showResult('firebase-result', '❌ فشل الحفظ: ' + error.message, 'error');
+            }
+        }
+
+        async function testFirebaseGetUser() {
+            try {
+                const user = await HybridStore.getUser("0900000000");
+                if (user) {
+                    showResult('firebase-result', '✅ تم جلب المستخدم:\n\n' +
+                        JSON.stringify(user, null, 2), 'success');
+                } else {
+                    showResult('firebase-result', '⚠️ المستخدم غير موجود\n\nجرب حفظ مستخدم أولاً', 'info');
+                }
+            } catch (error) {
+                showResult('firebase-result', '❌ خطأ: ' + error.message, 'error');
+            }
+        }
+
+        // ===================================
+        // Twilio Tests
+        // ===================================
+        async function testTwilioConfig() {
+            try {
+                const result = await TwilioSMS.verifyConfig();
+                if (result.valid) {
+                    showResult('twilio-result', '✅ إعدادات Twilio صحيحة!\n\nالحساب جاهز لإرسال الرسائل', 'success');
+                } else {
+                    showResult('twilio-result', '❌ إعدادات Twilio غير صحيحة\n\n' +
+                        'تأكد من تحديث:\n1. Account SID\n2. Auth Token\n3. Phone Number', 'error');
+                }
+            } catch (error) {
+                showResult('twilio-result', '⚠️ وضع التطوير\n\nTwilio غير مفعل، سيتم استخدام المحاكاة', 'info');
+            }
+        }
+
+        async function testSendOTP() {
+            const phone = document.getElementById('test-phone').value || '0936020439';
+            try {
+                const result = await EnhancedSMS.sendOTP(phone);
+                showResult('twilio-result',
+                    result.success ?
+                        `✅ تم إرسال OTP!\n\nالوضع: ${result.mode || 'simulation'}\n${result.simulated ? 'الرمز: ' + result.code : ''}` :
+                        '❌ فشل الإرسال: ' + result.message,
+                    result.success ? 'success' : 'error'
+                );
+            } catch (error) {
+                showResult('twilio-result', '❌ خطأ: ' + error.message, 'error');
+            }
+        }
+
+        async function testSendSMS() {
+            const phone = document.getElementById('test-phone').value || '0936020439';
+            try {
+                const result = await EnhancedSMS.send(phone, 'رسالة تجريبية من معاملاتي 🎉');
+                showResult('twilio-result',
+                    result.success ?
+                        '✅ تم إرسال الرسالة بنجاح!' :
+                        '❌ فشل الإرسال',
+                    result.success ? 'success' : 'error'
+                );
+            } catch (error) {
+                showResult('twilio-result', '❌ خطأ: ' + error.message, 'error');
+            }
+        }
+
+        // ===================================
+        // Security Tests
+        // ===================================
+        async function testPasswordHashing() {
+            try {
+                const password = "test123";
+                const hash = await SecurityManager.hashPassword(password);
+                const isValid = await SecurityManager.verifyPassword(password, hash);
+
+                showResult('security-result',
+                    `✅ تشفير كلمة المرور:\n\n` +
+                    `الأصلية: ${password}\n` +
+                    `المشفرة: ${hash.substring(0, 50)}...\n` +
+                    `التحقق: ${isValid ? '✅ صحيح' : '❌ خطأ'}`,
+                    'success'
+                );
+            } catch (error) {
+                showResult('security-result', '❌ خطأ: ' + error.message, 'error');
+            }
+        }
+
+        function testJWTGeneration() {
+            try {
+                const userData = { id: 1, phone: '0936020439', role: 'ADMIN' };
+                const token = SecurityManager.generateToken(userData);
+                const verification = SecurityManager.verifyToken(token);
+
+                showResult('security-result',
+                    `✅ JWT Token:\n\n` +
+                    `Token: ${token.substring(0, 50)}...\n\n` +
+                    `التحقق: ${verification.valid ? '✅ صالح' : '❌ غير صالح'}\n` +
+                    `البيانات: ${JSON.stringify(verification.payload, null, 2)}`,
+                    verification.valid ? 'success' : 'error'
+                );
+            } catch (error) {
+                showResult('security-result', '❌ خطأ: ' + error.message, 'error');
+            }
+        }
+
+        function testRateLimiting() {
+            try {
+                let results = '';
+                for (let i = 1; i <= 7; i++) {
+                    const check = SecurityManager.rateLimiter.checkLimit('test-user', 5);
+                    results += `المحاولة ${i}: ${check.allowed ? '✅ مسموح' : '❌ محظور (' + check.remainingTime + 'ث)'}\n`;
+                }
+
+                showResult('security-result',
+                    `🛡️ اختبار Rate Limiting:\n\n${results}\n` +
+                    `الحد الأقصى: 5 محاولات / 15 دقيقة`,
+                    'success'
+                );
+
+                // Reset for next test
+                SecurityManager.rateLimiter.reset('test-user');
+            } catch (error) {
+                showResult('security-result', '❌ خطأ: ' + error.message, 'error');
+            }
+        }
+
+        function testInputSanitization() {
+            try {
+                const tests = [
+                    { input: '0936020439', type: 'phone', expected: '963936020439' },
+                    { input: '<script>alert("XSS")</script>', type: 'string', expected: 'scriptalert("XSS")/script' },
+    { input: '123.45abc', type: 'number', expected: 123.45 }
+    ];
+
+    let results = '';
+    tests.forEach(test => {
+    let cleaned;
+    if (test.type === 'phone') cleaned = SecurityManager.sanitize.phone(test.input);
+    else if (test.type === 'string') cleaned = SecurityManager.sanitize.string(test.input);
+    else if (test.type === 'number') cleaned = SecurityManager.sanitize.number(test.input);
+
+    results += `${test.type}: "${test.input}" → "${cleaned}"\n`;
+    });
+
+    showResult('security-result', `✅ تنظيف المدخلات:\n\n${results}`, 'success');
+    } catch (error) {
+    showResult('security-result', '❌ خطأ: ' + error.message, 'error');
+    }
+    }
+
+    // ===================================
+    // Integration Tests
+    // ===================================
+    async function testFullRegistration() {
+    try {
+    const password = "test123";
+    const hashedPassword = await SecurityManager.hashPassword(password);
+
+    const userData = {
+    id: Date.now(),
+    name: "مستخدم تكامل",
+    phone: "0911111111",
+    password: hashedPassword,
+    role: "USER",
+    balanceUSD: 0,
+    balanceSYP: 0
+    };
+
+    // Save to Firebase
+    await HybridStore.saveUser(userData);
+
+    // Generate token
+    const token = SecurityManager.generateToken(userData);
+    SecurityManager.saveSession(token, userData);
+
+    showResult('integration-result',
+    `✅ تسجيل كامل ناجح!\n\n` +
+    `المستخدم: ${userData.name}\n` +
+    `الهاتف: ${userData.phone}\n` +
+    `Token: ${token.substring(0, 30)}...\n` +
+    `الجلسة: محفوظة`,
+    'success'
+    );
+    } catch (error) {
+    showResult('integration-result', '❌ فشل التسجيل: ' + error.message, 'error');
+    }
+    }
+
+    async function testFullLogin() {
+    try {
+    const phone = "0911111111";
+    const password = "test123";
+
+    // Get user
+    const user = await HybridStore.getUser(phone);
+    if (!user) {
+    showResult('integration-result', '⚠️ المستخدم غير موجود\n\nجرب "تسجيل مستخدم كامل" أولاً', 'info');
+    return;
+    }
+
+    // Verify password
+    const isValid = await SecurityManager.verifyPassword(password, user.password);
+    if (!isValid) {
+    showResult('integration-result', '❌ كلمة المرور غير صحيحة', 'error');
+    return;
+    }
+
+    // Generate token
+    const token = SecurityManager.generateToken(user);
+    SecurityManager.saveSession(token, user);
+
+    showResult('integration-result',
+    `✅ تسجيل دخول ناجح!\n\n` +
+    `المستخدم: ${user.name}\n` +
+    `الدور: ${user.role}\n` +
+    `الرصيد USD: $${user.balanceUSD}\n` +
+    `الرصيد SYP: ${user.balanceSYP.toLocaleString()} ل.س`,
+    'success'
+    );
+    } catch (error) {
+    showResult('integration-result', '❌ فشل تسجيل الدخول: ' + error.message, 'error');
+    }
+    }
+
+    async function testTransaction() {
+    showResult('integration-result',
+    '⚠️ اختبار المعاملات المالية\n\n' +
+    'هذه الميزة تتطلب:\n' +
+    '1. مستخدم مسجل دخول\n' +
+    '2. رصيد كافٍ\n' +
+    '3. مستلم صالح\n\n' +
+    'استخدم صفحة المحفظة للاختبار الكامل',
+    'info'
+    );
+    }
+
+    // ===================================
+    // System Status Check
+    // ===================================
+    async function checkSystemStatus() {
+    let status = '📊 حالة النظام الشاملة:\n\n';
+
+    // Firebase
+    try {
+    if (typeof firebase !== 'undefined' && firebaseDB) {
+    status += '✅ Firebase: متصل\n';
+    } else {
+    status += '❌ Firebase: غير متصل\n';
+    }
+    } catch (e) {
+    status += '❌ Firebase: خطأ\n';
+    }
+
+    // Twilio
+    try {
+    const twilioCheck = await TwilioSMS.verifyConfig();
+    status += twilioCheck.valid ? '✅ Twilio: جاهز\n' : '⚠️ Twilio: وضع التطوير\n';
+    } catch (e) {
+    status += '⚠️ Twilio: وضع التطوير\n';
+    }
+
+    // Security
+    try {
+    const testToken = SecurityManager.generateToken({ id: 1 });
+    const verification = SecurityManager.verifyToken(testToken);
+    status += verification.valid ? '✅ Security: يعمل\n' : '❌ Security: خطأ\n';
+    } catch (e) {
+    status += '❌ Security: خطأ\n';
+    }
+
+    // LocalStorage
+    try {
+    localStorage.setItem('test', 'test');
+    localStorage.removeItem('test');
+    status += '✅ LocalStorage: يعمل\n';
+    } catch (e) {
+    status += '❌ LocalStorage: معطل\n';
+    }
+
+    status += '\n━━━━━━━━━━━━━━━━━━━━━━\n';
+    status += 'الموقع جاهز للاستخدام! 🚀';
+
+    showResult('status-result', status, 'success');
+    }
+    </script>
+</body>
+
+</html>

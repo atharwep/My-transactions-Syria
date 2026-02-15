@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إيداع رصيد - المحفظة الملكية</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --gold-main: #C5A021;
+            --gold-light: #E8D081;
+            --bg-dark: #0A0A0B;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border-rgba: rgba(197, 160, 33, 0.2);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: white;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .aura {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            filter: blur(120px);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        .aura-gold {
+            background: var(--gold-main);
+            top: -100px;
+            left: -100px;
+        }
+
+        .aura-purple {
+            background: #7C3AED;
+            bottom: -100px;
+            right: -100px;
+        }
+
+        .header-section {
+            padding: 2rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .back-btn {
+            width: 45px;
+            height: 45px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-rgba);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .royal-title h1 {
+            margin: 0;
+            font-weight: 900;
+            font-size: 1.5rem;
+            background: linear-gradient(to bottom, #FFF, var(--gold-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .deposit-container {
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .deposit-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-rgba);
+            border-radius: 30px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .method-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .method-btn {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .method-btn.active {
+            border-color: var(--gold-main);
+            background: rgba(197, 160, 33, 0.05);
+        }
+
+        .method-btn i {
+            display: block;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--gold-main);
+        }
+
+        .method-btn span {
+            font-weight: 800;
+            font-size: 0.8rem;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 800;
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .p-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 18px;
+            padding: 18px;
+            color: white;
+            font-weight: 700;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .p-input:focus {
+            border-color: var(--gold-main);
+        }
+
+        .btn-deposit {
+            width: 100%;
+            padding: 20px;
+            background: var(--gold-main);
+            color: black;
+            border: none;
+            border-radius: 20px;
+            font-weight: 900;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-deposit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(197, 160, 33, 0.2);
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 900;
+        }
+
+        .status-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .status-failed {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .history-item {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="aura aura-gold"></div>
+    <div class="aura aura-purple"></div>
+
+    <div class="header-section">
+        <a href="wallet.html" class="back-btn"><i class="fas fa-chevron-right"></i></a>
+        <div class="royal-title">
+            <h1>طلب إيداع رصيد</h1>
+        </div>
+        <div class="back-btn"><i class="fas fa-plus"></i></div>
+    </div>
+
+    <div class="deposit-container">
+        <div class="deposit-card">
+            <div class="method-selector">
+                <div class="method-btn active" onclick="setMethod('AGENT', this)">
+                    <i class="fas fa-user-tie"></i>
+                    <span>عبر وكيل</span>
+                </div>
+                <div class="method-btn" onclick="setMethod('BANK', this)">
+                    <i class="fas fa-university"></i>
+                    <span>تحويل بنكي</span>
+                </div>
+            </div>
+
+            <form id="depositForm">
+                <div class="input-group">
+                    <label>العملة</label>
+                    <select id="currency" class="p-input" style="background-image: none;">
+                        <option value="SYP">ليرة سورية (SYP)</option>
+                        <option value="USD">دولار أمريكي (USD)</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>المبلغ المطلوب</label>
+                    <input type="number" id="amount" class="p-input" placeholder="0.00" required>
+                </div>
+
+                <div id="agent-info" class="input-group">
+                    <label>رقم هاتف الوكيل (إن وجد)</label>
+                    <input type="text" id="agentPhone" class="p-input" placeholder="09xxxxxxxx">
+                </div>
+
+                <div id="bank-info" class="input-group" style="display: none;">
+                    <label>رقم الحساب المرسل منه</label>
+                    <input type="text" id="bankAccount" class="p-input" placeholder="IBAN / Account Number">
+                </div>
+
+                <button type="submit" class="btn-deposit" id="submitBtn">تأكيد طلب الإيداع</button>
+            </form>
+        </div>
+
+        <div style="margin-top: 40px;">
+            <h3 style="font-weight: 900; margin-bottom: 20px; color: var(--gold-main);">طلبات الإيداع الأخيرة</h3>
+            <div id="requestsList">
+                <div style="text-align: center; padding: 20px; opacity: 0.5;">لا يوجد طلبات حالية</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/notifications.js"></script>
+    <script>
+        let selectedMethod = 'AGENT';
+
+        function setMethod(method, el) {
+            selectedMethod = method;
+            document.querySelectorAll('.method-btn').forEach(btn => btn.classList.remove('active'));
+            el.classList.add('active');
+
+            document.getElementById('agent-info').style.display = method === 'AGENT' ? 'block' : 'none';
+            document.getElementById('bank-info').style.display = method === 'BANK' ? 'block' : 'none';
+        }
+
+        document.getElementById('depositForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const amount = document.getElementById('amount').value;
+            const currency = document.getElementById('currency').value;
+            const btn = document.getElementById('submitBtn');
+
+            btn.disabled = true;
+            btn.innerText = "جاري الإرسال...";
+
+            // Simulate API Call
+            setTimeout(() => {
+                const requests = JSON.parse(localStorage.getItem('wusul_deposit_requests') || '[]');
+                const newReq = {
+                    id: Date.now(),
+                    amount,
+                    currency,
+                    method: selectedMethod,
+                    status: 'PENDING',
+                    date: new Date().toLocaleString('ar-SY')
+                };
+                requests.unshift(newReq);
+                localStorage.setItem('wusul_deposit_requests', JSON.stringify(requests));
+
+                Notify.show("تم إرسال الطلب", "طلب الإيداع قيد المراجعة الآن.", "fas fa-clock");
+                renderRequests();
+                btn.disabled = false;
+                btn.innerText = "تأكيد طلب الإيداع";
+                document.getElementById('amount').value = '';
+            }, 1000);
+        };
+
+        function renderRequests() {
+            const list = JSON.parse(localStorage.getItem('wusul_deposit_requests') || '[]');
+            const container = document.getElementById('requestsList');
+
+            if (list.length === 0) return;
+
+            container.innerHTML = list.map(req => `
+                <div class="history-item">
+                    <div>
+                        <div style="font-weight: 900; font-size: 0.9rem;">${req.amount} ${req.currency}</div>
+                        <div style="font-size: 0.65rem; color: #94a3b8;">${req.date} • ${req.method === 'AGENT' ? 'وكيل' : 'بنك'}</div>
+                    </div>
+                    <div>
+                        <span class="status-badge status-${req.status.toLowerCase()}">
+                            ${req.status === 'PENDING' ? 'قيد المعالجة' : (req.status === 'SUCCESS' ? 'ناجح' : 'فاشل')}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!Store.user) { window.location.href = 'login.html'; return; }
+            renderRequests();
+        });
+    </script>
+</body>
+
+</html>

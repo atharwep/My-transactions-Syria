@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الدردشة الطبية - بوابة سوريا الذكية</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            background: #f0f2f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: white;
+            padding: 15px 5%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 100;
+        }
+
+        .chat-user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .chat-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 900;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px 5%;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            position: relative;
+            line-height: 1.5;
+            font-weight: 700;
+        }
+
+        .msg-received {
+            align-self: flex-start;
+            background: white;
+            color: #1e293b;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+        }
+
+        .msg-sent {
+            align-self: flex-end;
+            background: var(--gold);
+            color: white;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 8px 25px rgba(197, 160, 33, 0.2);
+        }
+
+        .msg-time {
+            display: block;
+            font-size: 0.6rem;
+            opacity: 0.6;
+            margin-top: 5px;
+            text-align: left;
+        }
+
+        .chat-input-area {
+            background: white;
+            padding: 20px 5%;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 15px 20px;
+            border-radius: 30px;
+            border: 1px solid #e2e8f0;
+            outline: none;
+            font-family: inherit;
+            font-weight: 700;
+            background: #f8fafc;
+        }
+
+        .send-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--gold);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: 0.3s;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="chat-header">
+        <div class="chat-user-info">
+            <a href="javascript:history.back()" style="color: #64748B; margin-left:10px;"><i
+                    class="fas fa-chevron-right"></i></a>
+            <div class="chat-avatar" id="peerAvatar">?</div>
+            <div>
+                <h4 id="peerName" style="margin: 0; font-weight: 950; font-size: 1rem;">جاري التحميل...</h4>
+                <p id="peerStatus" style="margin: 0; font-size: 0.7rem; color: #16a34a; font-weight: 800;">متصل الآن •
+                    استشارة طبية</p>
+            </div>
+        </div>
+        <div style="display: flex; gap: 15px; color: #64748B;">
+            <i class="fas fa-phone-alt"></i>
+            <i class="fas fa-video"></i>
+            <i class="fas fa-ellipsis-v"></i>
+        </div>
+    </header>
+
+    <div class="chat-messages" id="chatMessages">
+        <div style="text-align: center; margin: 20px 0;">
+            <span
+                style="background: #e2e8f0; padding: 4px 12px; border-radius: 50px; font-size: 0.65rem; color: #64748B; font-weight: 800;">بداية
+                المحادثة الآمنة 🔒</span>
+        </div>
+    </div>
+
+    <div class="chat-input-area">
+        <button class="send-btn" style="background: #f1f5f9; color: #64748B;"><i class="fas fa-plus"></i></button>
+        <input type="text" id="messageInput" class="chat-input" placeholder="اكتب رسالتك هنا...">
+        <button class="send-btn" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const bookingId = urlParams.get('booking_id');
+        let booking = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!Store.user || !bookingId) { window.location.href = 'index.html'; return; }
+
+            loadBookingData();
+            loadMessages();
+
+            // Polling simulation
+            setInterval(pollMessages, 3000);
+        });
+
+        function loadBookingData() {
+            const allBookings = JSON.parse(localStorage.getItem('wusul_bookings') || '[]');
+            booking = allBookings.find(b => b.id == bookingId);
+
+            if (!booking) { alert("التوجس غير موجود"); return; }
+
+            // Check if user is participant
+            const isPatient = (Store.user.phone === booking.patientPhone);
+            const peerName = isPatient ? booking.doctorName : booking.patientName;
+
+            document.getElementById('peerName').innerText = peerName;
+            document.getElementById('peerAvatar').innerText = peerName.charAt(0);
+        }
+
+        function loadMessages() {
+            const allMsgs = JSON.parse(localStorage.getItem(`chat_${bookingId}`) || '[]');
+            const container = document.getElementById('chatMessages');
+
+            // Keep original intro
+            const intro = container.firstElementChild.outerHTML;
+            container.innerHTML = intro;
+
+            allMsgs.forEach(msg => {
+                const isMine = msg.senderPhone === Store.user.phone;
+                addMessageToUI(msg.text, isMine, msg.time);
+            });
+
+            scrollBottom();
+        }
+
+        function scrollBottom() {
+            const container = document.getElementById('chatMessages');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addMessageToUI(text, isMine, time) {
+            const container = document.getElementById('chatMessages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${isMine ? 'msg-sent' : 'msg-received'}`;
+            msgDiv.innerHTML = `
+                ${text}
+                <span class="msg-time">${time}</span>
+            `;
+            container.appendChild(msgDiv);
+        }
+
+        document.getElementById('sendBtn').onclick = () => {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const time = new Date().toLocaleTimeString('ar-SY', { hour: '2-digit', minute: '2-digit' });
+            const msg = {
+                senderPhone: Store.user.phone,
+                text: text,
+                time: time
+            };
+
+            const allMsgs = JSON.parse(localStorage.getItem(`chat_${bookingId}`) || '[]');
+            allMsgs.push(msg);
+            localStorage.setItem(`chat_${bookingId}`, JSON.stringify(allMsgs));
+
+            addMessageToUI(text, true, time);
+            input.value = '';
+            scrollBottom();
+        };
+
+        document.getElementById('messageInput').onkeypress = (e) => {
+            if (e.key === 'Enter') document.getElementById('sendBtn').click();
+        };
+
+        function pollMessages() {
+            // In a real app, fetch from server
+            // Here we just reload from localStorage to see if "other side" sent something
+            loadMessages();
+        }
+    </script>
+</body>
+
+</html>

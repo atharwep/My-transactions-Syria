@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء حساب - معاملاتي</title>
+    <script src="js/config.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+    <!-- Security & Integration Systems -->
+    <script src="js/security.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/twilio-sms.js"></script>
+
+    <!-- Real AI Engine: face-api.js -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+    <style>
+        .auth-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 40px;
+            padding: 50px 40px;
+            border: 1px solid var(--border-rgba);
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+        }
+
+        @media (max-width: 480px) {
+            .auth-card {
+                padding: 25px;
+                border-radius: 20px;
+            }
+
+            .auth-container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="glass-nav">
+        <a href="index.html" class="logo-container">
+            <div class="logo-box">
+                <img src="assets/logo.png" alt="معاملاتي">
+            </div>
+            <div style="font-weight: 950; font-size: 19px; color: white;">معاملاتي</div>
+        </a>
+    </nav>
+
+    <div class="auth-container">
+        <!-- Step 1: Register Form -->
+        <div id="register-step" class="auth-card step active">
+            <div class="text-center mb-2">
+                <div
+                    style="width: 70px; height: 70px; background: rgba(197, 160, 33, 0.1); border: 2px solid var(--gold); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 30px; box-shadow: 0 0 20px rgba(197, 160, 33, 0.3); color: var(--gold);">
+                    ✨</div>
+                <h2 style="font-weight: 950; font-size: 2rem; color: white;">انضم إلينا</h2>
+                <p style="color: var(--text-muted); font-weight: 700; font-size: 0.95rem; margin-top: 10px;">باشر تجربتك
+                    الملكية
+                    بإنشاء حساب جديد</p>
+            </div>
+
+            <form id="register-form" style="margin-top: 40px;">
+                <div class="form-group">
+                    <label>الاسم الكامل</label>
+                    <input type="text" id="name" class="form-input" placeholder="مثلاً: محمد أحمد" required>
+                </div>
+
+                <div class="form-group">
+                    <label>رقم الهاتف</label>
+                    <input type="text" id="phone" class="form-input" placeholder="093xxxxxxx" required>
+                </div>
+
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="reg-password" placeholder="كلمة المرور" required>
+                </div>
+
+                <!-- Doctor Registration Toggle -->
+                <div class="doctor-toggle-container"
+                    style="margin: 25px 0; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 18px; border: 1px solid var(--border-rgba);">
+                    <label
+                        style="display: flex; align-items: center; cursor: pointer; gap: 12px; font-weight: 800; color: var(--gold); font-size: 0.9rem;">
+                        <input type="checkbox" id="is-doctor-check" onchange="toggleDoctorFields()"
+                            style="width: 18px; height: 18px; accent-color: var(--gold);">
+                        التسجيل كطبيب مهني
+                    </label>
+                </div>
+
+                <!-- Identity Verification (KYC) - Required for all users -->
+                <div id="kyc-fields"
+                    style="margin-top: 25px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 25px; border: 1px solid var(--border-rgba); position: relative; overflow: hidden;">
+                    <h4 style="color: var(--gold); margin-bottom: 15px; font-weight: 900; font-size: 0.9rem;">🛡️ نظام
+                        التحقق الذكي (AI Identity)</h4>
+
+                    <!-- Scanning Animation Overlay -->
+                    <div id="ai-scanner-overlay"
+                        style="display:none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+                        <div class="scanner-line"></div>
+                        <div
+                            style="color: var(--gold); font-weight: 950; margin-top: 20px; text-align: center; font-size: 0.9rem; padding: 0 20px;">
+                            <i class="fas fa-microchip fa-spin"></i> جاري فحص الوثائق بالذكاء الاصطناعي...
+                            <div id="scan-status" style="font-size: 0.7rem; color: #94a3b8; margin-top: 5px;">تحليل
+                                ملامح الوجه ومطابقة الهوية...</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>الصورة الشخصية (سيلفي مباشر)</label>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="user-avatar-file" accept="image/*" class="form-input"
+                                style="padding: 12px;" required onchange="handleFilePreview(this, 'avatar-preview')">
+                            <img id="avatar-preview" src=""
+                                style="display:none; width: 60px; height: 60px; border-radius: 15px; margin-top: 10px; border: 2px solid var(--gold);">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>صورة الهوية الشخصية (واضحة وبدون فلاش)</label>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="user-id-file" accept="image/*" class="form-input"
+                                style="padding: 12px;" required onchange="handleFilePreview(this, 'id-preview')">
+                            <img id="id-preview" src="" class="no-capture"
+                                style="display:none; width: 100%; height: auto; border-radius: 15px; margin-top: 10px; border: 2px solid var(--border-rgba);">
+                        </div>
+                    </div>
+                </div>
+
+                <style>
+                    .scanner-line {
+                        width: 90%;
+                        height: 2px;
+                        background: var(--gold);
+                        box-shadow: 0 0 15px var(--gold);
+                        position: absolute;
+                        top: 0;
+                        animation: scanAnim 2s infinite ease-in-out;
+                    }
+
+                    @keyframes scanAnim {
+                        0% {
+                            top: 10%;
+                            opacity: 0;
+                        }
+
+                        50% {
+                            opacity: 1;
+                        }
+
+                        100% {
+                            top: 90%;
+                            opacity: 0;
+                        }
+                    }
+                </style>
+
+                <!-- Doctor Specific Fields -->
+                <div id="doctor-fields"
+                    style="display: none; animation: fadeIn 0.3s ease; margin-top: 20px; padding: 20px; background: rgba(197, 160, 33, 0.05); border-radius: 25px; border: 1px solid var(--border-rgba);">
+                    <h4 style="color: var(--gold); margin-bottom: 15px; font-weight: 900; font-size: 0.9rem;">⚕️ معلومات
+                        البطاقة المهنية</h4>
+
+                    <div class="input-group">
+                        <i class="fas fa-stethoscope"></i>
+                        <select id="doc-specialty" class="form-input">... (options) ...</select>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>صورة شهادة مزاولة المهنة</label>
+                        <input type="file" id="doc-cert-file" accept="image/*" class="form-input"
+                            style="padding: 12px;">
+                    </div>
+                </div>
+
+                <div id="recaptcha-container"></div>
+
+                <div style="margin-bottom: 2rem; display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" required id="terms">
+                    <label for="terms" style="margin: 0; font-size: 12px; font-weight: 700; color: #64748B;">أوافق على
+                        <a href="#" style="color: var(--gold);">شروط الخدمة</a> وسياسة الخصوصية</label>
+                </div>
+
+                <button type="submit" class="btn btn-primary"
+                    style="width: 100%; padding: 18px; border-radius: 20px; font-size: 1.1rem;">إنشاء الحساب
+                    الآن</button>
+            </form>
+
+            <div class="text-center mt-4">
+                <p style="color: #64748B; font-weight: 700; font-size: 0.9rem;">لديك حساب بالفعل؟ <a href="login.html"
+                        style="color: var(--gold); text-decoration: none; font-weight: 900;">سجل دخولك</a></p>
+            </div>
+        </div>
+
+        <!-- Step 2: OTP Entry -->
+        <div id="otp-step" class="auth-card step">
+            <div class="text-center mb-2">
+                <div style="font-size: 50px; margin-bottom: 20px;">📱</div>
+                <h2 style="font-weight: 900; font-size: 1.8rem;">تأكيد رقم الهاتف</h2>
+                <p style="color: #64748B; font-weight: 700; margin-top: 10px;">أدخل رمز التفعيل الذي أرسلناه لك</p>
+            </div>
+            <form id="otp-form" style="margin-top: 30px;">
+                <div class="form-group">
+                    <input type="text" id="otp-input" class="form-input text-center" maxlength="6"
+                        style="letter-spacing: 12px; font-size: 1.5rem;" placeholder="000000" required>
+                </div>
+                <button type="submit" class="btn btn-primary"
+                    style="width: 100%; padding: 18px; background: #16a34a;">تفعيل الحساب ✅</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/syria-data.js"></script>
+    <script src="js/auth.js"></script>
+
+    <div id="error-msg"
+        style="display: none; position: fixed; top: 20px; right: 20px; padding: 15px 25px; background: #ef4444; color: white; border-radius: 15px; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2); z-index: 10000; font-weight: 800; animation: slideIn 0.3s ease;">
+    </div>
+
+    <style>
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        #recaptcha-container {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+
+    <script>
+        let pendingUser = null;
+        let pendingToken = null;
+
+        function showStep(id) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function toggleDoctorFields() {
+            const isDoctor = document.getElementById('is-doctor-check').checked;
+            const fields = document.getElementById('doctor-fields');
+            if (isDoctor) {
+                fields.style.display = 'block';
+            } else {
+                fields.style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            LocationHelper.initGovernorates('doc-gov');
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') === 'doctor') {
+                document.getElementById('is-doctor-check').checked = true;
+                toggleDoctorFields();
+            }
+        });
+
+        // File Management Helpers
+        async function fileToBase64(file) {
+            if (!file) return null;
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        function handleFilePreview(input, imgId) {
+            const file = input.files[0];
+            const img = document.getElementById(imgId);
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // ======= REAL AI IDENTITY CORE =======
+        const AI_MODELS_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+        let modelsLoaded = false;
+
+        async function loadAIModels() {
+            if (modelsLoaded) return;
+            const scanStatus = document.getElementById('scan-status');
+            scanStatus.innerText = "جاري تحميل محرك الذكاء الاصطناعي... (لأول مرة)";
+            try {
+                await Promise.all([
+                    faceapi.nets.ssdMobilenetv1.loadFromUri(AI_MODELS_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(AI_MODELS_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(AI_MODELS_URL)
+                ]);
+                modelsLoaded = true;
+                console.log("AI Models Loaded Successfully");
+            } catch (err) {
+                console.error("AI Loading Error:", err);
+                throw new Error("فشل تحميل محرك الأمان العالمي. تأكد من استقرار الإنترنت.");
+            }
+        }
+
+        async function verifyIdentityAI(selfieImg, idImg) {
+            const selfieResults = await faceapi.detectSingleFace(selfieImg).withFaceLandmarks().withFaceDescriptor();
+            const idResults = await faceapi.detectSingleFace(idImg).withFaceLandmarks().withFaceDescriptor();
+            if (!selfieResults) throw new Error("لم يتم رصد وجه بشري واضح في صورتك الشخصية.");
+            if (!idResults) throw new Error("لم يتم رصد وجه واضح في صورة الهوية.");
+            const distance = faceapi.euclideanDistance(selfieResults.descriptor, idResults.descriptor);
+            if (distance > 0.55) throw new Error("بصمة الوجه لا تتطابق! الوجه في السيلفي يختلف عن الوجه في الهوية.");
+            return true;
+        }
+
+        document.getElementById('register-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+
+            const name = document.getElementById('name').value;
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('reg-password').value;
+
+            const isDoctor = document.getElementById('is-doctor-check').checked;
+            let role = 'USER';
+
+            // Process Identity Files
+            const avatarFile = document.getElementById('user-avatar-file').files[0];
+            const idCardFile = document.getElementById('user-id-file').files[0];
+
+            // TRIGGER AI SCANNER
+            const scanner = document.getElementById('ai-scanner-overlay');
+            const scanStatus = document.getElementById('scan-status');
+            scanner.style.display = 'flex';
+            btn.disabled = true;
+
+            // AI Simulation Logic
+            const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+            try {
+                // 1. Load Real AI Models
+                await loadAIModels();
+
+                // 2. Real Neural Network Verification
+                scanStatus.innerHTML = '<i class="fas fa-microchip"></i> جاري مطابقة البصمة الحيوية للوجه...';
+                await verifyIdentityAI(avatarPreview, idPreview);
+
+                scanStatus.innerHTML = '<i class="fas fa-shield-v"></i> تم التحقق بنجاح! جاري معالجة البيانات...';
+
+                // Process Files
+                const avatarBase64 = await fileToBase64(avatarFile);
+                const idCardBase64 = await fileToBase64(idCardFile);
+
+                let kycData = {
+                    avatar: avatarBase64,
+                    idCardImage: idCardBase64
+                };
+
+                if (isDoctor) {
+                    role = 'DOCTOR';
+                    const certFile = document.getElementById('doc-cert-file').files[0];
+                    kycData.certificate = await fileToBase64(certFile);
+                    kycData.specialty = document.getElementById('doc-specialty').value;
+                    kycData.clinic = document.getElementById('doc-clinic')?.value || "";
+                    kycData.price = document.getElementById('doc-price')?.value || 0;
+                }
+
+                // Call Register
+                const res = await Auth.register(name, phone, password, role, kycData);
+
+                if (res.success) {
+                    // Update user as verified since AI passed
+                    const users = Store.getUsers();
+                    const idx = users.findIndex(u => u.phone === phone);
+                    if (idx !== -1) {
+                        users[idx].isVerified = true;
+                        Store.setUsers(users);
+                    }
+
+                    scanner.style.display = 'none';
+                    pendingUser = res.user;
+                    pendingUser.isVerified = true; // For immediate login
+
+                    const otpRes = await Auth.sendOTP(phone, 'recaptcha-container');
+                    if (otpRes.success) {
+                        showStep('otp-step');
+                    } else {
+                        showError(otpRes.message);
+                        btn.disabled = false;
+                        btn.innerText = originalText;
+                    }
+                } else {
+                    throw new Error(res.message);
+                }
+            } catch (err) {
+                scanner.style.display = 'none';
+                showError(err.message || "فشل التحقق الذكي. يرجى التأكد من وضوح الهوية.");
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        });
+
+        document.getElementById('otp-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const code = document.getElementById('otp-input').value;
+            const verifyRes = await Auth.verifyOTP(code);
+
+            if (verifyRes.success) {
+                Auth.finalizeLogin(pendingUser, pendingToken);
+                window.location.href = 'dashboard.html';
+            } else {
+                showError(verifyRes.message || 'رمز التأكيد غير صحيح');
+            }
+        });
+
+        function showError(msg) {
+            const err = document.getElementById('error-msg');
+            err.innerText = msg;
+            err.style.display = 'block';
+            setTimeout(() => { err.style.display = 'none'; }, 5000);
+        }
+    </script>
+</body>
+
+</html>

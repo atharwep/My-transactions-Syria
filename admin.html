@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم المركزية - الإدارة الملكية</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --admin-primary: #1e293b;
+            --admin-secondary: #334155;
+            --admin-accent: var(--gold);
+        }
+
+        body {
+            background: #050505;
+        }
+
+        .admin-sidebar {
+            width: 280px;
+            background: #0a0a0b;
+            height: 100vh;
+            position: fixed;
+            right: 0;
+            top: 0;
+            border-left: 1px solid var(--border-rgba);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .main-content {
+            margin-right: 280px;
+            padding: 40px;
+            min-height: 100vh;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 18px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: rgba(197, 160, 33, 0.1);
+            color: var(--gold);
+            transform: translateX(-5px);
+        }
+
+        .admin-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-rgba);
+            border-radius: 30px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .data-table th {
+            text-align: right;
+            padding: 18px;
+            color: var(--gold);
+            font-size: 0.8rem;
+            border-bottom: 1px solid var(--border-rgba);
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .data-table td {
+            padding: 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 950;
+        }
+
+        .badge-admin {
+            background: rgba(197, 160, 33, 0.15);
+            color: var(--gold);
+        }
+
+        .badge-agent {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .badge-user {
+            background: rgba(255, 255, 255, 0.05);
+            color: #94a3b8;
+        }
+
+        .search-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-rgba);
+            border-radius: 20px;
+            padding: 15px 25px;
+            width: 100%;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .search-box:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 20px rgba(197, 160, 33, 0.1);
+        }
+
+        .action-btn {
+            width: 35px;
+            height: 35px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            border: none;
+            margin-left: 5px;
+        }
+
+        .btn-edit {
+            background: rgba(74, 144, 226, 0.1);
+            color: #4A90E2;
+        }
+
+        .btn-wallet {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .section-pane {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .section-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .admin-sidebar {
+                display: none;
+            }
+
+            .main-content {
+                margin-right: 0;
+            }
+        }
+    </style>
+</head>
+
+<body class="royal-dark">
+
+    <aside class="admin-sidebar">
+        <div style="text-align: center; margin-bottom: 40px;">
+            <img src="assets/logo.png" style="width: 70px; margin-bottom: 15px;">
+            <h2 style="color: white; font-weight: 950; font-size: 1.4rem;">الإدارة الملكية</h2>
+            <p style="color: var(--gold); font-size: 0.75rem; font-weight: 800;">التحكم المركزي بالمنظومة</p>
+        </div>
+
+        <nav>
+            <div class="nav-item active" onclick="showSection('overview', this)">
+                <i class="fas fa-chart-pie"></i> نظرة عامة
+            </div>
+            <div class="nav-item" onclick="showSection('users', this)">
+                <i class="fas fa-users"></i> إدارة المستخدمين
+            </div>
+            <div class="nav-item" onclick="showSection('doctors', this)">
+                <i class="fas fa-user-md"></i> قطاع الأطباء
+            </div>
+            <div class="nav-item" onclick="showSection('finance', this)">
+                <i class="fas fa-wallet"></i> المالية والشحن
+            </div>
+            <div class="nav-item" onclick="showSection('taxis', this)">
+                <i class="fas fa-taxi"></i> الكباتن والطلبات
+            </div>
+            <div class="nav-item" onclick="showSection('complaints', this)">
+                <i class="fas fa-exclamation-circle"></i> الشكاوى والمقترحات
+            </div>
+            <div class="nav-item" onclick="showSection('health', this)">
+                <i class="fas fa-hospital"></i> المشافي والصيدليات
+            </div>
+        </nav>
+
+        <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border-rgba);">
+            <a href="dashboard.html" class="nav-item" style="color: #64748b;">
+                <i class="fas fa-arrow-right"></i> لوحة المستخدم
+            </a>
+            <div class="nav-item" onclick="Auth.logout()" style="color: #ef4444;">
+                <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <!-- Overview Section -->
+        <section id="pane-overview" class="section-pane active">
+            <h1 style="color: white; font-weight: 950; font-size: 2.2rem; margin-bottom: 30px;">نظرة عامة على النظام
+            </h1>
+
+            <div class="grid grid-4">
+                <div class="admin-card" style="padding: 20px;">
+                    <p style="color: var(--text-muted); font-size: 0.8rem; font-weight: 800; margin-bottom: 10px;">
+                        إجمالي المستخدمين</p>
+                    <h2 id="stat-total-users" style="color: white; font-weight: 950;">0</h2>
+                </div>
+                <div class="admin-card" style="padding: 20px;">
+                    <p style="color: var(--text-muted); font-size: 0.8rem; font-weight: 800; margin-bottom: 10px;">
+                        الأطباء المعتمدون</p>
+                    <h2 id="stat-total-docs" style="color: #10b981; font-weight: 950;">0</h2>
+                </div>
+                <div class="admin-card" style="padding: 20px;">
+                    <p style="color: var(--text-muted); font-size: 0.8rem; font-weight: 800; margin-bottom: 10px;">حجم
+                        السيولة (USD)</p>
+                    <h2 id="stat-total-usd" style="color: var(--gold); font-weight: 950;">$0</h2>
+                </div>
+                <div class="admin-card" style="padding: 20px;">
+                    <p style="color: var(--text-muted); font-size: 0.8rem; font-weight: 800; margin-bottom: 10px;">حجم
+                        السيولة (SYP)</p>
+                    <h2 id="stat-total-syp" style="color: #4A90E2; font-weight: 950;">0</h2>
+                </div>
+            </div>
+
+            <div class="grid grid-2" style="gap: 30px;">
+                <div class="admin-card">
+                    <h3 style="color: white; margin-bottom: 20px;">العمليات الأخيرة</h3>
+                    <div id="latest-tx-list"></div>
+                </div>
+                <div class="admin-card">
+                    <h3 style="color: white; margin-bottom: 20px;">طلبات معلقة</h3>
+                    <div id="pending-actions-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Users Management Section -->
+        <section id="pane-users" class="section-pane">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h1 style="color: white; font-weight: 950; font-size: 2.2rem;">إدارة المستخدمين</h1>
+                <div style="width: 350px;">
+                    <input type="text" class="search-box" placeholder="ابحث باسم المستخدم أو الهاتف..."
+                        onkeyup="filterUsers(this.value)">
+                </div>
+            </div>
+
+            <div class="admin-card" style="padding: 0; overflow: hidden;">
+                <table class="data-table" id="users-table">
+                    <thead>
+                        <tr>
+                            <th>المستخدم</th>
+                            <th>رقم الهاتف</th>
+                            <th>الرتبة</th>
+                            <th>التقييم</th>
+                            <th>رصيد (USD)</th>
+                            <th>رصيد (SYP)</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-list-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Finance Section -->
+        <section id="pane-finance" class="section-pane">
+            <h1 style="color: white; font-weight: 950; font-size: 2.2rem; margin-bottom: 30px;">المالية والشحن المركزي
+            </h1>
+
+            <div class="grid grid-2">
+                <div class="admin-card">
+                    <h3 style="color: var(--gold); margin-bottom: 20px;">شحن رصيد / سحب</h3>
+                    <div class="form-group">
+                        <label>ادخل رقم هاتف العميل</label>
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" id="target-phone" class="form-input" placeholder="09xxxxxxxx"
+                                style="flex:1;">
+                            <button class="btn btn-outline" onclick="verifyFinanceTarget()"
+                                style="min-width:auto; padding:0 15px;"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="form-group">
+                            <label>المبلغ</label>
+                            <input type="number" id="target-amount" class="form-input" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>العملة</label>
+                            <select id="target-currency" class="form-input">
+                                <option value="USD">دولار ($)</option>
+                                <option value="SYP">ليرة سورية (SYP)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 15px;">
+                        <button class="btn btn-primary" style="flex: 1;" onclick="performRecharge('UP')">إيداع ملكي
+                            (+)</button>
+                        <button class="btn" style="flex: 1; background: #ef4444; color: white;"
+                            onclick="performRecharge('DOWN')">سحب رصيد (-)</button>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <h3 style="color: white; margin-bottom: 20px;">حالة السيولة المركزية</h3>
+                    <div id="liquidity-chart-container" style="height: 300px;">
+                        <canvas id="liquidityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Doctor Section Shell -->
+        <section id="pane-doctors" class="section-pane">
+            <h1 style="color: white; font-weight: 950; font-size: 2.2rem; margin-bottom: 30px;">قطاع الأطباء</h1>
+            <div id="doctor-approval-container"></div>
+            <div class="admin-card" style="padding: 0; overflow: hidden; margin-top: 30px;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>الطبيب</th>
+                            <th>التخصص</th>
+                            <th>التقييم</th>
+                            <th>المدينة</th>
+                            <th>الحالة</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-doctors-list"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Taxi Management Section -->
+        <section id="pane-taxis" class="section-pane">
+            <h1 style="color: white; font-weight: 950; font-size: 2.2rem; margin-bottom: 30px;">إدارة أسطول الكباتن</h1>
+            <div class="grid grid-3" style="margin-bottom: 30px;">
+                <div class="admin-card" style="padding: 20px;">
+                    <p style="color: gray; font-size: 0.7rem;">طلبات التاكسي النشطة</p>
+                    <h2 id="taxi-active-count" style="color: var(--gold);">0</h2>
+                </div>
+                <div class="admin-card" style="padding: 20px;">
+                    <p style="color: gray; font-size: 0.7rem;">إجمالي الكباتن</p>
+                    <h2 id="taxi-drivers-count" style="color: white;">0</h2>
+                </div>
+                <div class="admin-card" style="padding: 20px;">
+                    <p style="color: gray; font-size: 0.7rem;">متوسط التقييم العام</p>
+                    <h2 style="color: #f59e0b;">4.8 ★</h2>
+                </div>
+            </div>
+
+            <div class="admin-card" style="padding: 0; overflow: hidden;">
+                <h3 style="padding: 20px; color: var(--gold);">📋 طلبات النقل الجارية</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>المسافر</th>
+                            <th>الكابتن</th>
+                            <th>المسار</th>
+                            <th>السعر</th>
+                            <th>الحالة</th>
+                            <th>إجراء الإدارة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-taxis-list"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Complaints Section -->
+        <section id="pane-complaints" class="section-pane">
+            <h1 style="color: white; font-weight: 950; font-size: 2.2rem; margin-bottom: 30px;">صندوق الشكاوى والمقترحات
+            </h1>
+            <div id="complaints-list">
+                <div class="admin-card" style="border-right: 4px solid #ef4444;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div>
+                            <span class="badge" style="background:#ef4444; color:white; margin-bottom:10px;">شكوى رقم
+                                #554</span>
+                            <h4 style="color:white;">تأخر الكابتن في الوصول</h4>
+                            <p style="color:var(--text-muted); font-size:0.85rem;">المستخدم: 0944112233 | التاريخ:
+                                2026-02-08</p>
+                        </div>
+                        <button class="btn btn-primary" style="padding:8px 15px; font-size:0.75rem;">رد وحفظ</button>
+                    </div>
+                    <p
+                        style="margin-top:15px; color:white; background:rgba(255,255,255,0.02); padding:15px; border-radius:12px;">
+                        "الكابتن تأخر أكثر من 20 دقيقة عن الموعد المحدد رغم تأكيد الطلب..."
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Detailed User Modal Container -->
+    <div id="userModal" class="modal"
+        style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+        <div class="card" style="width: 500px; max-width: 90%; position: relative;">
+            <button onclick="closeUserModal()"
+                style="position: absolute; top: 20px; left: 20px; background: none; border: none; color: gray; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <div id="userModalContent"></div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!Store.user || Store.user.role !== 'ADMIN') {
+                alert("صلاحية الوصول للإدارة فقط");
+                window.location.href = 'index.html';
+                return;
+            }
+            initAdmin();
+        });
+
+        function showSection(id, el) {
+            document.querySelectorAll('.section-pane').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.getElementById('pane-' + id).classList.add('active');
+            el.classList.add('active');
+
+            // Refresh specific data
+            if (id === 'users') renderUsers();
+            if (id === 'doctors') renderAdminDoctors();
+            if (id === 'taxis') renderAdminTaxis();
+        }
+
+        function initAdmin() {
+            const users = Store.getUsers();
+            const docs = Store.getData('doctors') || [];
+
+            document.getElementById('stat-total-users').innerText = users.length;
+            document.getElementById('stat-total-docs').innerText = docs.filter(d => d.isVerified).length;
+
+            const totalUSD = users.reduce((acc, u) => acc + (u.balanceUSD || 0), 0);
+            const totalSYP = users.reduce((acc, u) => acc + (u.balanceSYP || 0), 0);
+
+            document.getElementById('stat-total-usd').innerText = `$${totalUSD.toLocaleString()}`;
+            document.getElementById('stat-total-syp').innerText = `${totalSYP.toLocaleString()} ل.س`;
+
+            renderLatestTx();
+            initCharts();
+        }
+
+        function renderUsers() {
+            const users = Store.getUsers();
+            const body = document.getElementById('users-list-body');
+            body.innerHTML = users.map(u => `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.02);">
+                    <td>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <img src="${u.avatar || 'assets/nuser.png'}" style="width:35px; height:35px; border-radius:10px; object-fit:cover;">
+                            <div>
+                                <div style="font-weight:950; color:white;">${u.name}</div>
+                                <div style="font-size:0.7rem; color:gray;">ID: #${u.id || '---'}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-family:monospace; color:var(--gold);">${u.phone}</td>
+                    <td><span class="badge badge-${u.role.toLowerCase()}" style="font-size:0.6rem;">${u.role}</span></td>
+                    <td style="color:#f59e0b;">${u.rating || '4.5'} ★</td>
+                    <td style="color:#10b981; font-weight:800;">$${(u.balanceUSD || 0).toLocaleString()}</td>
+                    <td style="color:#4A90E2; font-weight:800;">${(u.balanceSYP || 0).toLocaleString()}</td>
+                    <td>
+                        <div style="display:flex; gap:5px;">
+                            <button class="action-btn btn-wallet" onclick="openRechargeFor('${u.phone}')" title="شحن رصيد"><i class="fas fa-coins"></i></button>
+                            
+                            ${u.role === 'USER' ? `
+                                <button class="action-btn" onclick="adminChangeRole('${u.phone}', 'AGENT')" style="background:rgba(16,185,129,0.1); color:#10b981;" title="ترقية لوكيل"><i class="fas fa-user-tie"></i></button>
+                                <button class="action-btn" onclick="adminChangeRole('${u.phone}', 'ADMIN')" style="background:rgba(197,160,33,0.1); color:var(--gold);" title="ترقية لمدير"><i class="fas fa-crown"></i></button>
+                            ` : `
+                                <button class="action-btn" onclick="adminResetUser('${u.phone}')" style="background:rgba(239,68,68,0.1); color:#ef4444;" title="إعادة لمستخدم عادي / إنهاء خدمة"><i class="fas fa-user-slash"></i></button>
+                            `}
+                            
+                            <button class="action-btn btn-edit" title="تعديل الشامل"><i class="fas fa-user-cog"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="7" style="text-align:center; padding:40px; color:gray;">لا يوجد مستخدمين حالياً</td></tr>';
+        }
+
+        async function adminChangeRole(phone, role) {
+            const roleName = role === 'ADMIN' ? 'مدير نظام' : 'وكيل معتمد';
+            if (!confirm(`هل أنت متأكد من ترقية هذا الحساب إلى (${roleName})؟`)) return;
+
+            let res;
+            if (role === 'ADMIN') res = Auth.makeAdmin(phone);
+            else res = Auth.activateAgent(phone);
+
+            if (res.success) {
+                Notify.show("نجاح الترقية", res.message, "fas fa-medal");
+                renderUsers();
+                initAdmin();
+            } else {
+                Notify.show("خطأ", res.message, "fas fa-times");
+            }
+        }
+
+        async function adminResetUser(phone) {
+            if (!confirm("هل أنت متأكد من إنهاء خدمة هذا العضو وإعادته لوضع مستخدم عادي؟")) return;
+            const res = Auth.resetToUser(phone);
+            if (res.success) {
+                Notify.show("تم التنفيذ", res.message, "fas fa-undo");
+                renderUsers();
+                initAdmin();
+            } else {
+                Notify.show("خطأ", res.message, "fas fa-times");
+            }
+        }
+
+        function renderAdminDoctors() {
+            const docs = Store.getData('doctors') || [];
+            const body = document.getElementById('admin-doctors-list');
+            body.innerHTML = docs.map(d => `
+                <tr>
+                    <td>${d.name}</td>
+                    <td><span style="direction:ltr;">${d.city || 'غير محدد'} | ${d.specialty || 'عام'}</span></td>
+                    <td style="color:#f59e0b;">${d.rating || '4.8'} ★</td>
+                    <td>${d.city || 'دمشق'}</td>
+                    <td>${d.isVerified ? '<span style="color:#10b981;">معتمد</span>' : '<span style="color:#f59e0b;">معلق ⏳</span>'}</td>
+                    <td>
+                        <div style="display:flex; gap:5px;">
+                            ${!d.isVerified ? `
+                            <button class="action-btn" onclick="adminApproveDoctor('${d.phone || d.id}')" style="background:rgba(16,185,129,0.1); color:#10b981;" title="اعتماد">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            ` : ''}
+                            <button class="action-btn btn-edit" onclick="adminEditDoctor('${d.phone || d.id}')" title="تعديل"><i class="fas fa-pen"></i></button>
+                            <button class="action-btn btn-delete" onclick="adminDeleteDoctor('${d.phone || d.id}')" title="حذف"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="6" style="text-align:center; padding:30px; color:gray;">لا يوجد أطباء مسجلين</td></tr>';
+        }
+
+        async function adminApproveDoctor(phone) {
+            if (!confirm("هل أنت متأكد من اعتماد هذا الطبيب وتفعيل حسابه؟")) return;
+            const res = await Auth.approveDoctor(phone);
+            if (res.success) {
+                Notify.show("تم الاعتماد", res.message, "fas fa-check-circle");
+                renderAdminDoctors(); // Refresh list
+                initAdmin(); // Refresh dashboard counts
+            } else {
+                Notify.show("خطأ", res.message, "fas fa-times-circle");
+            }
+        }
+
+        async function adminDeleteDoctor(phone) {
+            if (!confirm("⚠️ تحذير: هل أنت متأكد من حذف سجل هذا الطبيب نهائياً؟")) return;
+            const res = await Auth.deleteDoctor(phone);
+            if (res.success) {
+                Notify.show("تم الحذف", res.message, "fas fa-trash-alt");
+                renderAdminDoctors();
+                initAdmin();
+            } else {
+                Notify.show("خطأ", res.message, "fas fa-times");
+            }
+        }
+
+        function renderAdminTaxis() {
+            const drivers = Store.getData('taxi_drivers') || [];
+            const orders = Store.getData('taxi_orders') || [];
+            document.getElementById('taxi-drivers-count').innerText = drivers.length;
+            document.getElementById('taxi-active-count').innerText = orders.filter(o => o.status === 'PENDING' || o.status === 'ACCEPTED').length;
+
+            const body = document.getElementById('admin-taxis-list');
+            body.innerHTML = orders.slice(-10).reverse().map(o => `
+                <tr>
+                    <td>${o.userName}</td>
+                    <td>${o.driverName || 'قيد البحث...'}</td>
+                    <td style="font-size:0.75rem;">${o.from} ➔ ${o.to}</td>
+                    <td style="color:var(--gold);">${o.price}</td>
+                    <td><span class="badge" style="background:#334155;">${o.status}</span></td>
+                    <td>
+                        <button class="btn btn-outline" style="padding:4px 10px; font-size:10px;">تفاصيل</button>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="6" style="text-align:center; padding:30px; color:gray;">لا يوجد طلبات حالياً</td></tr>';
+        }
+
+        function renderLatestTx() {
+            const txs = Store.getData('transactions') || [];
+            const list = document.getElementById('latest-tx-list');
+            list.innerHTML = txs.slice(-5).reverse().map(tx => `
+                <div style="display:flex; justify-content:space-between; padding:15px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <div>
+                        <p style="margin:0; font-weight:900;">${tx.title}</p>
+                        <p style="margin:0; font-size:0.75rem; color:var(--text-muted);">${tx.userPhone} | ${tx.date}</p>
+                    </div>
+                    <span style="color:${tx.amount > 0 ? '#10b981' : '#ef4444'}; font-weight:950;">${tx.amount > 0 ? '+' : ''}${tx.amount} ${tx.currency}</span>
+                </div>
+            `).join('') || '<p style="text-align:center; padding:20px; color:gray;">لا يوجد عمليات حديثة</p>';
+        }
+
+        async function verifyFinanceTarget() {
+            const phone = document.getElementById('target-phone').value;
+            const res = await Auth.findUserByPhone(phone);
+            if (res) {
+                Notify.show("مستخدم صالح", `الاسم: ${res.name}`, "fas fa-user-check");
+                document.getElementById('target-phone').style.borderColor = "#10b981";
+            } else {
+                Notify.show("الرقم غير صحيح", "هذا الرقم غير مسجل في النظام", "fas fa-user-times");
+                document.getElementById('target-phone').style.borderColor = "#ef4444";
+            }
+        }
+
+        function performRecharge(type) {
+            const phone = document.getElementById('target-phone').value;
+            const amount = parseFloat(document.getElementById('target-amount').value);
+            const currency = document.getElementById('target-currency').value;
+
+            if (!phone || isNaN(amount)) return Notify.show("خطأ", "يرجى إدخال البيانات كاملة", "fas fa-times");
+
+            const finalAmount = type === 'UP' ? amount : -amount;
+            const res = Store.updateUserBalance(phone, finalAmount, currency, "شحن إداري مركزي", "ADMIN");
+
+            if (res.success) {
+                Notify.show("نجاح فوري ✅", `تمت المعالجة بنجاح. الرصيد الجديد: ${res.newBalance.toLocaleString()} ${currency}`, "fas fa-check-double");
+                initAdmin(); // Refresh stats
+            } else {
+                Notify.show("فشل العملية", res.message === "المستخدم غير موجود" ? "الرقم غير صحيح أو غير مسجل" : res.message, "fas fa-times-circle");
+            }
+        }
+
+        function openRechargeFor(phone) {
+            showSection('finance', document.querySelector('[onclick*="finance"]'));
+            document.getElementById('target-phone').value = phone;
+        }
+
+        function filterUsers(query) {
+            const body = document.getElementById('users-list-body');
+            const allUsers = Store.getUsers();
+            if (!query) return renderUsers();
+
+            const q = query.toLowerCase();
+            const filtered = allUsers.filter(u =>
+                (u.name && u.name.toLowerCase().includes(q)) ||
+                (u.phone && u.phone.includes(q))
+            );
+
+            body.innerHTML = filtered.map(u => `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.02);">
+                    <td>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <img src="${u.avatar || 'assets/nuser.png'}" style="width:35px; height:35px; border-radius:10px; object-fit:cover;">
+                            <div>
+                                <div style="font-weight:950; color:white;">${u.name}</div>
+                                <div style="font-size:0.7rem; color:gray;">ID: #${u.id || '---'}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-family:monospace; color:var(--gold);">${u.phone}</td>
+                    <td><span class="badge badge-${u.role.toLowerCase()}" style="font-size:0.6rem;">${u.role}</span></td>
+                    <td style="color:#f59e0b;">${u.rating || '4.5'} ★</td>
+                    <td style="color:#10b981; font-weight:800;">$${(u.balanceUSD || 0).toLocaleString()}</td>
+                    <td style="color:#4A90E2; font-weight:800;">${(u.balanceSYP || 0).toLocaleString()}</td>
+                    <td>
+                        <div style="display:flex; gap:5px;">
+                            <button class="action-btn btn-wallet" onclick="openRechargeFor('${u.phone}')" title="شحن رصيد"><i class="fas fa-coins"></i></button>
+                            
+                            ${u.role === 'USER' ? `
+                                <button class="action-btn" onclick="adminChangeRole('${u.phone}', 'AGENT')" style="background:rgba(16,185,129,0.1); color:#10b981;" title="ترقية لوكيل"><i class="fas fa-user-tie"></i></button>
+                                <button class="action-btn" onclick="adminChangeRole('${u.phone}', 'ADMIN')" style="background:rgba(197,160,33,0.1); color:var(--gold);" title="ترقية لمدير"><i class="fas fa-crown"></i></button>
+                            ` : `
+                                <button class="action-btn" onclick="adminResetUser('${u.phone}')" style="background:rgba(239,68,68,0.1); color:#ef4444;" title="إعادة لمستخدم عادي / إنهاء خدمة"><i class="fas fa-user-slash"></i></button>
+                            `}
+                            
+                            <button class="action-btn btn-edit" title="تعديل الشامل"><i class="fas fa-user-cog"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="7" style="text-align:center; padding:40px; color:gray;">لم يتم العثور على نتائج</td></tr>';
+        }
+
+        function initCharts() {
+            new Chart(document.getElementById('liquidityChart'), {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+                    datasets: [{
+                        label: 'Gross Volume (USD)',
+                        data: [12000, 19000, 15000, 25000, 30000],
+                        borderColor: '#C5A021',
+                        backgroundColor: 'rgba(197, 160, 33, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

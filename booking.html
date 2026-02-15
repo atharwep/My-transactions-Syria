@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حجز موعد | د. أحمد عبدالله</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Kufi+Arabic:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/booking.css">
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="doctor-header">
+            <img src="https://ui-avatars.com/api/?name=Ahmed+Abdullah&background=0D8ABC&color=fff" alt="Doctor"
+                class="doctor-avatar">
+            <div class="doctor-name" id="doc-name">
+                جاري التحميل...
+                <i class="fas fa-check-circle verified-badge hidden" id="verified-badge" title="طبيب معتمد"></i>
+            </div>
+            <p class="doctor-specialty" id="doc-spec">...</p>
+        </header>
+
+        <!-- Queue Widget -->
+        <div class="queue-card">
+            <div class="queue-info">
+                <h3 id="queue-title">المرضى في الانتظار</h3>
+                <div class="queue-number" id="queue-count">--</div>
+                <div class="live-indicator">
+                    <div class="pulse"></div>
+                    مباشر
+                </div>
+            </div>
+
+            <div class="est-time">
+                <h3>وقت الدخول المتوقع</h3>
+                <div class="time-val">
+                    <i class="far fa-clock"></i>
+                    <span id="est-time">--:--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Services -->
+        <h3 class="section-title">اختر نوع الخدمة</h3>
+        <div class="services-grid" id="services-grid">
+            <!-- Injected by JS -->
+        </div>
+
+        <!-- Bottom Action -->
+        <div class="action-area">
+            <button class="book-btn" id="book-btn">
+                <span>حجز الموعد والدفع</span>
+                <i class="fas fa-arrow-left"></i>
+            </button>
+        </div>
+
+        <!-- Notification Toast -->
+        <div class="notification" id="notification">
+            <span class="notification-icon" id="notif-icon">🔔</span>
+            <p id="notif-message">اشعار جديد</p>
+        </div>
+
+        <!-- Confirm Modal -->
+        <div class="modal-overlay" id="confirm-modal">
+            <div class="modal-content">
+                <h3 style="margin-bottom: 20px;">تفاصيل الحجز</h3>
+                <div id="modal-details">
+                    <!-- Dynamic Content -->
+                </div>
+
+                <div style="margin-top: 24px;">
+                    <button class="book-btn" id="confirm-pay-btn" style="background: var(--success-color);">
+                        تأكيد واستمرار
+                    </button>
+                    <button class="book-btn" onclick="closeModal()"
+                        style="background: transparent; color: var(--text-secondary); margin-top: 8px;">
+                        إلغاء
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/booking.js"></script>
+</body>
+
+</html>

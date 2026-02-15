@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تتبع الرحلة - معاملاتي</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .order-status-card {
+            background: linear-gradient(135deg, rgba(197, 160, 33, 0.1) 0%, rgba(10, 11, 16, 0.5) 100%);
+            border: 1px solid var(--gold);
+            border-radius: 35px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .driver-info-large {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 25px;
+            border: 1px solid var(--border-rgba);
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin: 40px 0;
+            position: relative;
+        }
+
+        .step-indicator::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 0;
+        }
+
+        .step-dot {
+            width: 32px;
+            height: 32px;
+            background: #1e293b;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #475569;
+            z-index: 1;
+            border: 2px solid #0f172a;
+            transition: 0.5s;
+        }
+
+        .step-dot.active {
+            background: var(--gold);
+            color: black;
+            box-shadow: 0 0 15px var(--gold);
+            border-color: var(--gold);
+        }
+
+        .step-label {
+            position: absolute;
+            top: 40px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            width: 80px;
+            text-align: center;
+            margin-right: -24px;
+        }
+    </style>
+</head>
+
+<body class="royal-dark">
+    <nav class="glass-nav">
+        <a href="index.html" class="logo-container">
+            <div class="logo-box">
+                <img src="assets/logo.png" alt="معاملاتي">
+            </div>
+            <div style="font-weight: 950; font-size: 19px; color: white;">معاملاتي</div>
+        </a>
+        <div id="nav-right"></div>
+    </nav>
+
+    <div class="container" style="padding-top: 50px; max-width: 600px;">
+        <div id="order-content">
+            <!-- Dynamic Content -->
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const orderId = params.get('id');
+            loadOrder(orderId);
+        });
+
+        function loadOrder(id) {
+            const orders = Store.getData('taxi_orders') || [];
+            const order = orders.find(o => o.id === id);
+
+            if (!order) {
+                document.getElementById('order-content').innerHTML = `
+                    <div class="card text-center">
+                        <i class="fas fa-search" style="font-size: 50px; color: gray; margin-bottom: 20px;"></i>
+                        <h2 style="color: white;">عذراً، الطلب غير موجود</h2>
+                        <a href="taxi.html" class="btn btn-primary" style="margin-top: 20px;">العودة لصفحة الحجز</a>
+                    </div>
+                `;
+                return;
+            }
+
+            const driver = (Store.getData('taxi_drivers') || []).find(d => d.id == order.driverId);
+
+            document.getElementById('order-content').innerHTML = `
+                <div class="order-status-card">
+                    <p style="color: var(--gold); font-weight: 900; letter-spacing: 2px;">رقم الطلب: ${order.id}</p>
+                    <h1 id="main-status-text" style="color: white; font-weight: 950; font-size: 2.2rem; margin: 15px 0;">الكابتن في الطريق</h1>
+                    <p style="color: var(--text-muted); font-weight: 700;">وقت الوصول المتوقع: <span style="color: white;">5 دقائق</span></p>
+
+                    <div class="step-indicator">
+                        <div class="step-dot active" title="تم قبول الطلب">
+                            <i class="fas fa-check"></i>
+                            <span class="step-label">تم القبول</span>
+                        </div>
+                        <div class="step-dot active" id="step-moving" title="في الطريق">
+                            <i class="fas fa-car-side"></i>
+                            <span class="step-label">في الطريق</span>
+                        </div>
+                        <div class="step-dot" id="step-arrived" title="وصل السائق">
+                            <i class="fas fa-location-dot"></i>
+                            <span class="step-label">وصل السائق</span>
+                        </div>
+                        <div class="step-dot" id="step-done" title="تمت الرحلة">
+                            <i class="fas fa-flag-checkered"></i>
+                            <span class="step-label">مكتملة</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="color: white; font-weight: 900; margin-bottom: 20px; text-align: right;">بيانات الكابتن</h3>
+                    <div class="driver-info-large">
+                        <img src="${driver.avatar}" style="width: 100px; height: 100px; border-radius: 30px; border: 3px solid var(--gold); margin-bottom: 15px;">
+                        <h2 style="color: white; font-weight: 950; margin-bottom: 5px;">${driver.name}</h2>
+                        <p style="color: var(--gold); font-weight: 800; font-size: 0.9rem; margin-bottom: 15px;">⭐ ${driver.rating} • ${driver.carType}</p>
+                        
+                        <div class="grid grid-2" style="width: 100%; gap: 10px;">
+                            <a href="tel:${driver.phone}" class="btn" style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-weight: 900;">
+                                <i class="fas fa-phone"></i> اتصال
+                            </a>
+                            <button class="btn" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; font-weight: 900;">
+                                <i class="fas fa-comment"></i> دردشة
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="background: rgba(255, 255, 255, 0.01); padding: 20px; border-radius: 20px; border: 1px solid var(--border-rgba); margin-top: 20px;">
+                        <p style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span style="color: var(--text-muted); font-weight: 700;">نقطة الانطلاق:</span>
+                            <span style="color: white; font-weight: 800;">${order.pickup}</span>
+                        </p>
+                        <p style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span style="color: var(--text-muted); font-weight: 700;">الوجهة:</span>
+                            <span style="color: white; font-weight: 800;">${order.destination}</span>
+                        </p>
+                        <p style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-muted); font-weight: 700;">فئة الرحلة:</span>
+                            <span style="color: var(--gold); font-weight: 950;">${order.type === 'VIP' ? 'ملكية 👑' : 'عادية'}</span>
+                        </p>
+                    </div>
+
+                    <button class="btn" onclick="cancelOrder('${order.id}')" style="width: 100%; margin-top: 25px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); font-weight: 900;">
+                        إلغاء الطلب
+                    </button>
+                </div>
+            `;
+
+            // Auto-advance simulation for demo
+            simulateTrip();
+        }
+
+        function simulateTrip() {
+            setTimeout(() => {
+                const stepArrived = document.getElementById('step-arrived');
+                if (stepArrived) {
+                    stepArrived.classList.add('active');
+                    document.getElementById('main-status-text').innerText = "الكابتن وصل لموقعك!";
+                    Notify.show("رحلتك", "الكابتن وصل الآن إلى نقطة الانطلاق 🚕", "fas fa-check-circle");
+                }
+            }, 10000);
+
+            setTimeout(() => {
+                const stepDone = document.getElementById('step-done');
+                if (stepDone) {
+                    stepDone.classList.add('active');
+                    document.getElementById('main-status-text').innerText = "تم الوصول للوجهة بنجاح";
+                    Notify.show("رحلتك", "الحمدلله على السلامة! تمت الرحلة بنجاح ✨", "fas fa-flag-checkered");
+                }
+            }, 25000);
+        }
+
+        function cancelOrder(id) {
+            if (confirm("هل أنت متأكد من إلغاء الرحلة؟")) {
+                const orders = Store.getData('taxi_orders') || [];
+                const idx = orders.findIndex(o => o.id === id);
+                if (idx !== -1) {
+                    orders[idx].status = 'CANCELLED';
+                    Store.setData('taxi_orders', orders);
+                    Notify.show("نظام النقل", "تم إلغاء طلب الرحلة بنجاح", "fas fa-info-circle");
+                    window.location.href = 'taxi.html';
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>وضع الطوارئ - معاملاتي</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .emergency-btn {
+            height: 120px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            font-size: 1.8rem;
+            font-weight: 950;
+            margin-bottom: 25px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            transition: 0.3s;
+            text-decoration: none;
+            width: 100%;
+        }
+
+        .emergency-btn i {
+            font-size: 2.5rem;
+        }
+
+        .btn-ambulance {
+            background: linear-gradient(135deg, #ef4444, #991b1b);
+            color: white;
+            border-color: #fca5a5;
+        }
+
+        .btn-hospital {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border-color: var(--border-rgba);
+        }
+
+        .btn-pharmacy {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border-color: var(--border-rgba);
+        }
+
+        .btn-taxi {
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color: black;
+            border-color: var(--gold-light);
+        }
+
+        .emergency-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .emergency-btn:active {
+            transform: scale(0.98);
+        }
+
+        .big-pill {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px dashed #ef4444;
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+            margin-bottom: 40px;
+            animation: pulseBg 2s infinite;
+        }
+
+        @keyframes pulseBg {
+            0% {
+                background: rgba(239, 68, 68, 0.05);
+            }
+
+            50% {
+                background: rgba(239, 68, 68, 0.15);
+            }
+
+            100% {
+                background: rgba(239, 68, 68, 0.05);
+            }
+        }
+
+        .minimal-info {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body class="royal-dark" style="background: black;"> <!-- High contrast black background -->
+    <div class="container" style="max-width: 600px;">
+        <div class="big-pill">
+            <h1 style="color: #ef4444; font-weight: 950; font-size: 2.5rem; margin: 0;">وضع الطوارئ مُفعل</h1>
+            <p style="color: white; font-weight: 700; margin-top: 5px;">اضغط على الزر المناسب لحالتك فوراً</p>
+        </div>
+
+        <a href="tel:110" class="emergency-btn btn-ambulance">
+            <span>إسعاف (110)</span>
+            <i class="fas fa-phone-alt"></i>
+        </a>
+
+        <div class="minimal-info">أقرب نقطة طبية لك:</div>
+        <a href="hospitals.html?emergency=true" class="emergency-btn btn-hospital">
+            <span>أقرب مشفى طوارئ</span>
+            <i class="fas fa-hospital-symbol"></i>
+        </a>
+
+        <a href="pharmacies.html?on_call=true" class="emergency-btn btn-pharmacy">
+            <span>أقرب صيدلية مناوبة</span>
+            <i class="fas fa-pills"></i>
+        </a>
+
+        <a href="taxi.html?medical=true" class="emergency-btn btn-taxi">
+            <span>طلب تكسي طبي</span>
+            <i class="fas fa-ambulance"></i>
+        </a>
+
+        <div style="margin-top: 50px; text-align: center;">
+            <button onclick="shareLocation()" class="btn btn-outline"
+                style="width: 100%; padding: 25px; border-radius: 25px; font-size: 1.2rem;">
+                <i class="fas fa-share-alt" style="margin-left: 10px;"></i> مشاركة موقعي مع العائلة
+            </button>
+            <a href="index.html"
+                style="display: block; margin-top: 30px; color: gray; font-weight: 700; text-decoration: none;">إلغاء
+                وضع الطوارئ والعودة للرئيسية</a>
+        </div>
+    </div>
+
+    <script src="js/notifications.js"></script>
+    <script src="js/smart-notifications.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        function shareLocation() {
+            const userName = (typeof Store !== 'undefined' && Store.user) ? Store.user.name : "زائر مجهول";
+            if (typeof SmartNotifications !== 'undefined') {
+                SmartNotifications.triggerEmergencyBroadCast(userName);
+            } else {
+                Notify.show("تمت المشاركة", "تم إرسال إشعار طارئ لموقعك لجميع أفراد العائلة.", "fas fa-paper-plane");
+            }
+        }
+    </script>
+</body>
+
+</html>

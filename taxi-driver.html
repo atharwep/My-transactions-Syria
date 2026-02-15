@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة الكابتن - معاملاتي</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .stat-card-taxi {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-rgba);
+            border-radius: 25px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-card-taxi h2 {
+            font-size: 2rem;
+            font-weight: 950;
+            color: var(--gold);
+            margin: 5px 0;
+        }
+
+        .stat-card-taxi p {
+            color: var(--text-muted);
+            font-weight: 800;
+            font-size: 0.8rem;
+        }
+
+        .request-item {
+            background: rgba(197, 160, 33, 0.03);
+            border: 1px solid var(--gold);
+            border-radius: 25px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .status-toggle {
+            padding: 15px 30px;
+            border-radius: 20px;
+            font-weight: 950;
+            cursor: pointer;
+            transition: 0.3s;
+            border: none;
+        }
+
+        .status-on {
+            background: #10b981;
+            color: white;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .status-off {
+            background: #334155;
+            color: white;
+        }
+    </style>
+</head>
+
+<body class="royal-dark">
+    <nav class="glass-nav">
+        <a href="index.html" class="logo-container">
+            <div class="logo-box">
+                <img src="assets/logo.png" alt="معاملاتي">
+            </div>
+            <div style="font-weight: 950; font-size: 19px; color: white;">معاملاتي <span
+                    style="font-size: 0.6rem; background: var(--gold); color: black; padding: 2px 8px; border-radius: 5px; margin-right: 5px;">كابتن</span>
+            </div>
+        </a>
+        <div id="nav-right"></div>
+    </nav>
+
+    <div class="container" style="padding-top: 50px;">
+        <div class="grid grid-3" style="margin-bottom: 40px; gap: 20px;">
+            <div class="stat-card-taxi">
+                <p>إجمالي الأرباح</p>
+                <h2 id="total-earnings">0</h2>
+                <span style="color: #10b981; font-size: 0.7rem; font-weight: 950;">+12% هذا الشهر</span>
+            </div>
+            <div class="stat-card-taxi">
+                <p>عدد الرحلات</p>
+                <h2 id="trip-count">0</h2>
+                <span style="color: var(--gold); font-size: 0.7rem; font-weight: 950;">⭐ تقييم 4.9</span>
+            </div>
+            <div class="stat-card-taxi" style="cursor: pointer;" onclick="toggleAvailability()">
+                <p>حالة الاتصال</p>
+                <button id="status-btn" class="status-toggle status-off">غير متصل</button>
+            </div>
+        </div>
+
+        <div class="grid sidebar-layout">
+            <main>
+                <h3 style="color: white; font-weight: 950; margin-bottom: 25px;">الطلبات النشطة (حولك)</h3>
+                <div id="requests-list">
+                    <div style="text-align: center; color: var(--text-muted); padding: 60px 0;">
+                        <i class="fas fa-toggle-off" style="font-size: 40px; margin-bottom: 15px; opacity: 0.3;"></i>
+                        <p style="font-weight: 800;">قم بالاتصال بالشبكة لاستقبال الطلبات</p>
+                    </div>
+                </div>
+            </main>
+
+            <aside>
+                <div class="card">
+                    <h3 style="color: white; font-weight: 900; margin-bottom: 20px;">سجل آخر الرحلات</h3>
+                    <div id="trip-history" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Dynamic -->
+                        <p style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 20px;">لا
+                            يوجد سجل رحلات بعد</p>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        let isOnline = false;
+        let currentDriver = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!Store.user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Find driver record by current user phone
+            const drivers = Store.getData('taxi_drivers') || [];
+            currentDriver = drivers.find(d => d.phone === Store.user.phone);
+
+            if (!currentDriver) {
+                // Not a driver, redirect or show message
+                document.body.innerHTML = `<div style="height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:20px;">
+                    <h1 style="color:white; margin-bottom:20px;">عذراً، أنت لست مسجلاً ككابتن</h1>
+                    <a href="apply.html" class="btn btn-primary">انضم لفريق الكابتن الآن</a>
+                </div>`;
+                return;
+            }
+
+            // Load Stats
+            document.getElementById('total-earnings').innerText = currentDriver.trips * 15 + " ن";
+            document.getElementById('trip-count').innerText = currentDriver.trips;
+
+            if (currentDriver.status === 'AVAILABLE') {
+                isOnline = true;
+                updateStatusUI();
+            }
+        });
+
+        function toggleAvailability() {
+            isOnline = !isOnline;
+            const drivers = Store.getData('taxi_drivers') || [];
+            const idx = drivers.findIndex(d => d.id === currentDriver.id);
+            if (idx !== -1) {
+                drivers[idx].status = isOnline ? 'AVAILABLE' : 'OFFLINE';
+                Store.setData('taxi_drivers', drivers);
+            }
+            updateStatusUI();
+
+            if (isOnline) {
+                Notify.show("نظام الكابتن", "أنت الآن متصل وتستقبل الطلبات الملكية 📡", "fas fa-wifi");
+                simulateNewRequest();
+            } else {
+                Notify.show("نظام الكابتن", "تم قطع الاتصال. استمتع براحتك!", "fas fa-power-off");
+                document.getElementById('requests-list').innerHTML = `<div style="text-align:center; color:gray; padding:50px;">أنت غير متصل حالياً</div>`;
+            }
+        }
+
+        function updateStatusUI() {
+            const btn = document.getElementById('status-btn');
+            btn.className = `status-toggle ${isOnline ? 'status-on' : 'status-off'}`;
+            btn.innerText = isOnline ? 'متصل ومتاح' : 'غير متصل';
+        }
+
+        function simulateNewRequest() {
+            if (!isOnline) return;
+
+            setTimeout(() => {
+                const list = document.getElementById('requests-list');
+                list.innerHTML = `
+                    <div class="request-item">
+                        <div>
+                            <h4 style="color:white; font-weight:950; margin:0;">رحلة ملكية VIP</h4>
+                            <p style="color:var(--text-muted); font-size:0.8rem; margin:5px 0;">من: السبع بحرات</p>
+                            <p style="color:var(--text-muted); font-size:0.8rem; margin:0;">إلى: الروضة، دمشق</p>
+                        </div>
+                        <div style="text-align:left;">
+                            <p style="color:var(--gold); font-weight:950; font-size:1.2rem; margin:0;">25 نقطة</p>
+                            <p style="color:var(--text-muted); font-size:0.6rem; margin-bottom:10px;">المسافة: 2.5 كم</p>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn" style="background:#10b981; color:white; padding:8px 15px; border-radius:10px; font-weight:900;" onclick="acceptTrip(this)">قبول</button>
+                                <button class="btn" style="background:#ef4444; color:white; padding:8px 15px; border-radius:10px; font-weight:900;" onclick="this.parentElement.parentElement.parentElement.remove()">رفض</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                // Play sound simulation
+                Notify.show("طلب جديد! 🔔", "هناك رحلة جديدة بانتظارك كابتن", "fas fa-car");
+            }, 3000);
+        }
+
+        function acceptTrip(btn) {
+            btn.disabled = true;
+            btn.innerText = "جاري الاتصال...";
+            setTimeout(() => {
+                Notify.show("نجاح", "تم قبول الرحلة! انطلق لموقع العميل 🚗", "fas fa-check-circle");
+                btn.parentElement.parentElement.parentElement.innerHTML = `
+                    <div style="text-align:center; width:100%;">
+                        <h4 style="color:white; font-weight:950; margin-bottom:10px;">الرحلة قيد التنفيذ</h4>
+                        <p style="color:var(--gold); font-size:0.8rem;">يرجى التوجه لنقطة الانطلاق (السبع بحرات)</p>
+                        <button class="btn btn-primary" style="margin-top:15px; width:200px;" onclick="completeTrip(this)">إنهاء الرحلة بنجاح ✅</button>
+                    </div>
+                `;
+            }, 1500);
+        }
+
+        function completeTrip(btn) {
+            Notify.show("شكراً كابتن!", "تم إنهاء الرحلة وإضافة الأرباح لمحفظتك 💰", "fas fa-coins");
+            location.reload();
+        }
+    </script>
+</body>
+
+</html>

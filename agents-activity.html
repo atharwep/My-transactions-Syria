@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفعيل الوكالات - بوابة الخدمات العامة</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4A90E2;
+            --gold: #C5A021;
+            --bg: #F8FAFC;
+        }
+
+        body {
+            background: #f0f4f8;
+            font-family: 'Almarai', sans-serif;
+        }
+
+        .header-bg {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            padding: 40px 20px;
+            color: white;
+            text-align: center;
+            border-bottom-left-radius: 40px;
+            border-bottom-right-radius: 40px;
+            margin-bottom: -50px;
+        }
+
+        .search-card {
+            background: white;
+            max-width: 600px;
+            margin: 0 auto;
+            border-radius: 30px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 10;
+        }
+
+        .user-preview {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 20px;
+            border: 1px dashed #cbd5e1;
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .avatar-box {
+            width: 70px;
+            height: 70px;
+            border-radius: 20px;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+
+        .activate-btn {
+            width: 100%;
+            padding: 18px;
+            background: var(--gold);
+            color: white;
+            border: none;
+            border-radius: 18px;
+            font-weight: 900;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: 0.3s;
+        }
+
+        .activate-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .status-pill {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header-bg">
+        <h2 style="font-weight: 950; margin-bottom: 5px;">البحث والتفعيل الذكي 🛡️</h2>
+        <p style="opacity: 0.7; font-size: 0.9rem;">تفعيل رتب الوكلاء والأطباء في ثوانٍ</p>
+    </div>
+
+    <div class="container" style="padding-top: 80px;">
+        <div class="search-card">
+            <h4 style="font-weight: 900; margin-bottom: 20px;">🔍 ابحث عن مستخدم</h4>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="phoneSearch" class="form-input" placeholder="أدخل رقم الهاتف (09xxxxxxxx)"
+                    maxlength="10">
+                <button class="btn btn-primary" onclick="searchUser()" id="searchBtn">تأكد</button>
+            </div>
+
+            <div id="userPreview" class="user-preview">
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div class="avatar-box" id="userAvatar">👤</div>
+                    <div style="flex: 1;">
+                        <h3 id="userName" style="font-weight: 950; margin: 0;">--</h3>
+                        <p id="userRole" style="margin: 0; color: #64748B; font-weight: 800; font-size: 0.85rem;">--</p>
+                        <div id="rolePill" class="status-pill"></div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 25px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                    <label style="font-weight: 800; font-size: 0.8rem; display: block; margin-bottom: 10px;">اختر الرتبة
+                        الجديدة:</label>
+                    <div class="grid grid-2" style="gap: 10px;">
+                        <button class="btn btn-outline" id="roleAgent"
+                            onclick="targetRole='AGENT'; selectRole(this)">وكيل معتمد 💼</button>
+                        <button class="btn btn-outline" id="roleDoctor"
+                            onclick="targetRole='DOCTOR'; selectRole(this)">طبيب مختص 🩺</button>
+                    </div>
+
+                    <button id="activateBtn" class="activate-btn" onclick="executeActivation()" disabled>تفعيل الرتبة
+                        الآن</button>
+                    <p id="alreadyMsg"
+                        style="color: #ef4444; font-size: 0.7rem; text-align: center; margin-top: 10px; display: none; font-weight: 800;">
+                        هذا المستخدم يمتلك هذه الرتبة بالفعل!</p>
+                </div>
+            </div>
+
+            <div id="noResults"
+                style="text-align: center; margin-top: 30px; display: none; color: #94a3b8; font-weight: 800;">
+                ❌ المستخدم غير موجود في النظام
+            </div>
+        </div>
+
+        <div style="margin-top: 50px; text-align: center;">
+            <a href="dashboard.html" style="color: #64748B; text-decoration: none; font-weight: 800;">← العودة للوحة
+                التحكم</a>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/notifications.js"></script>
+    <script>
+        let foundUser = null;
+        let targetRole = null;
+
+        async function searchUser() {
+            const phone = document.getElementById('phoneSearch').value;
+            const btn = document.getElementById('searchBtn');
+            const preview = document.getElementById('userPreview');
+            const noRes = document.getElementById('noResults');
+
+            if (phone.length < 10) return alert("يرجى إدخال رقم هاتف صحيح");
+
+            btn.disabled = true;
+            btn.innerText = "...";
+
+            // Use Auth.findUserByPhone or fallback to local
+            const user = await Auth.findUserByPhone(phone);
+
+            btn.disabled = false;
+            btn.innerText = "تأكد";
+
+            if (user) {
+                foundUser = user;
+                noRes.style.display = 'none';
+                preview.style.display = 'block';
+                document.getElementById('userName').innerText = user.name;
+                document.getElementById('userRole').innerText = `رقم الهاتف: ${user.phone}`;
+                document.getElementById('userAvatar').innerText = user.name.charAt(0);
+
+                const pill = document.getElementById('rolePill');
+                pill.style.background = user.role === 'ADMIN' ? '#fee2e2' : (user.role === 'AGENT' ? '#dcfce7' : '#f1f5f9');
+                pill.style.color = user.role === 'ADMIN' ? '#ef4444' : (user.role === 'AGENT' ? '#16a34a' : '#64748B');
+                pill.innerText = user.role;
+
+                resetRoleSelection();
+            } else {
+                foundUser = null;
+                preview.style.display = 'none';
+                noRes.style.display = 'block';
+            }
+        }
+
+        function selectRole(el) {
+            resetRoleSelection();
+            el.classList.add('active');
+            el.style.borderColor = 'var(--gold)';
+            el.style.background = 'rgba(197, 160, 33, 0.05)';
+
+            const msg = document.getElementById('alreadyMsg');
+            const btn = document.getElementById('activateBtn');
+
+            if (foundUser.role === targetRole) {
+                msg.style.display = 'block';
+                btn.disabled = true;
+            } else {
+                msg.style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+
+        function resetRoleSelection() {
+            document.querySelectorAll('.btn-outline').forEach(btn => {
+                btn.style.borderColor = 'rgba(0,0,0,0.08)';
+                btn.style.background = 'white';
+            });
+            document.getElementById('activateBtn').disabled = true;
+            document.getElementById('alreadyMsg').style.display = 'none';
+        }
+
+        async function executeActivation() {
+            if (!foundUser || !targetRole) return;
+
+            if (!confirm(`هل أنت متأكد من تغيير رتبة ${foundUser.name} إلى ${targetRole}؟`)) return;
+
+            const btn = document.getElementById('activateBtn');
+            btn.disabled = true;
+            btn.innerText = "جاري الحفظ...";
+
+            try {
+                // Simulate Update
+                const users = Store.getUsers();
+                const idx = users.findIndex(u => u.phone === foundUser.phone);
+                if (idx !== -1) {
+                    users[idx].role = targetRole;
+                    Store.setUsers(users);
+
+                    // Update current user if it's the same
+                    if (Store.user && Store.user.phone === foundUser.phone) {
+                        Store.user.role = targetRole;
+                        localStorage.setItem('wusul_user', JSON.stringify(Store.user));
+                    }
+                }
+
+                Notify.show("تم التفعيل", `تم تحديث رتبة ${foundUser.name} بنجاح.`, "fas fa-check-circle");
+                setTimeout(() => window.location.reload(), 1500);
+            } catch (e) {
+                alert("خطأ في التحديث");
+                btn.disabled = false;
+                btn.innerText = "تفعيل الرتبة الآن";
+            }
+        }
+    </script>
+</body>
+
+</html>

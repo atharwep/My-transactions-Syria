@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة الوكلاء - شحن وسحب النقاط</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <nav class="glass-nav">
+        <a href="index.html" class="logo-container">
+            <div class="logo-box">
+                <img src="assets/logo.png" alt="معاملاتي">
+            </div>
+            <div style="font-weight: 900; font-size: 18px;">بوابة الخدمات العامة</div>
+        </a>
+        <div class="nav-links" id="nav-menu">
+            <a href="dashboard.html">لوحة التحكم</a>
+            <a href="agents.html" class="active">بوابة الوكلاء</a>
+        </div>
+        <div id="nav-right" style="display: flex; align-items: center; gap: 15px;"></div>
+        <div class="menu-toggle" id="mobile-toggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </nav>
+
+    <div class="container" style="padding-top: 50px;">
+        <div class="text-center mb-2" style="margin-bottom: 50px;">
+            <h1 style="font-weight: 950; font-size: 2.8rem;">نظام الوكلاء والموزعين</h1>
+            <p style="color: #64748B; font-weight: 700; font-size: 1.1rem;">إدارة عمليات السحب والإيداع للمشتركين بكل
+                سهولة وأمان</p>
+        </div>
+
+        <div class="sidebar-layout">
+            <main>
+                <!-- Agent Transaction Tool -->
+                <div class="card" style="padding: 40px; border: 2px solid var(--gold);">
+                    <h3 style="font-weight: 900; margin-bottom: 25px; display: flex; align-items: center; gap: 10px;">💳
+                        تنفيذ عملية (شحن / سحب)</h3>
+
+                    <div id="status-msg"
+                        style="display: none; padding: 15px; border-radius: 12px; margin-bottom: 20px; font-weight: 800; text-align: center;">
+                    </div>
+
+                    <div class="grid grid-3">
+                        <div class="form-group">
+                            <label>رقم هاتف المستخدم المستهدف</label>
+                            <div style="display:flex; gap:5px;">
+                                <input type="text" id="target-phone" class="form-input" placeholder="09xxxxxxxx"
+                                    maxlength="10">
+                                <button class="btn btn-outline" onclick="verifyTarget()"
+                                    style="padding:0 15px; min-width:auto;"><i class="fas fa-search"></i></button>
+                            </div>
+                            <div id="target-preview"
+                                style="display:none; margin-top:5px; font-size:0.75rem; font-weight:800; color:#16a34a;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>العملة</label>
+                            <select id="currency" class="form-input">
+                                <option value="SYP">ليرة سورية (SYP)</option>
+                                <option value="USD">دولار أمريكي (USD)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>المبلغ / النقاط</label>
+                            <input type="number" id="points-amount" class="form-input" placeholder="0.00">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 15px; margin-top: 25px;">
+                        <button id="depositBtn" onclick="processAction('DEPOSIT')" class="btn btn-primary"
+                            style="flex: 1; padding: 20px; font-size: 1.1rem; background: #10b981; border-radius: 20px; border:none; color:white;">📥
+                            إيداع فوري (شحن)</button>
+                        <button id="withdrawBtn" onclick="processAction('WITHDRAW')" class="btn btn-outline"
+                            style="flex: 1; padding: 20px; font-size: 1.1rem; border: 2px solid #ef4444; color: #ef4444; border-radius: 20px; background:transparent;">📤
+                            سحب فوري (كاش)</button>
+                    </div>
+
+                    <div
+                        style="margin-top: 30px; padding: 20px; background: #F8FAFC; border-radius: 20px; border: 1px dashed #CBD5E1;">
+                        <p style="font-size: 0.8rem; font-weight: 800; color: #64748B; line-height: 1.6;">
+                            ⚠️ ملاحظة: لا يمكن التراجع عن العملية بعد تنفيذها. يرجى التأكد من رقم الهاتف وصحة المبلغ
+                            المستلم من المشترك قبل الضغط على التنفيذ.
+                        </p>
+                    </div>
+                </div>
+            </main>
+
+            <aside>
+                <div class="card">
+                    <h3 style="font-weight: 900; margin-bottom: 20px;">العمليات الأخيرة للوكالة</h3>
+                    <div id="agent-logs" style="text-align: center; padding: 30px 0; color: #94A3B8;">
+                        <p style="font-weight: 800; font-size: 0.9rem;">بانتظار تنفيذ أول عملية...</p>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 25px; background: #FFFBEB;">
+                    <h4 style="font-weight: 900; margin-bottom: 15px;">دعم الوكلاء</h4>
+                    <p style="font-size: 0.8rem; font-weight: 700; color: #92400E;">لطلب زيادة رصيد وكالة أو الإبلاغ عن
+                        مشكلة فنية، يرجى التواصل مع الإدارة الرئيسية.</p>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        async function verifyTarget() {
+            const phone = document.getElementById('target-phone').value;
+            const preview = document.getElementById('target-preview');
+            if (phone.length < 10) return;
+
+            preview.style.display = 'block';
+            preview.innerText = "جاري التحقق...";
+            preview.style.color = "#64748B";
+
+            const user = await Auth.findUserByPhone(phone);
+            if (user) {
+                preview.innerText = `✅ مستخدم صالح: ${user.name}`;
+                preview.style.color = "#10b981";
+            } else {
+                preview.innerText = `❌ الرقم غير صحيح أو غير مسجل`;
+                preview.style.color = "#ef4444";
+            }
+        }
+
+        async function processAction(type) {
+            const phone = document.getElementById('target-phone').value;
+            const points = parseFloat(document.getElementById('points-amount').value);
+            const currency = document.getElementById('currency').value;
+            const status = document.getElementById('status-msg');
+
+            if (!phone || isNaN(points) || points <= 0) {
+                showMsg("يرجى إدخال رقم هاتف صحيح ومبلغ صالح", "#fee2e2", "#dc2626");
+                return;
+            }
+
+            // Verify again before processing
+            const user = await Auth.findUserByPhone(phone);
+            if (!user) {
+                showMsg("فشل العملية: الرقم غير مسجل في النظام", "#fee2e2", "#dc2626");
+                return;
+            }
+
+            const actionText = (type === 'DEPOSIT') ? 'شحن' : 'سحب';
+            if (!confirm(`⚠️ تأكيد العملية الفورية:\n\nنوع العملية: ${actionText}\nالمستهدف: ${user.name}\nالمبلغ: ${points.toLocaleString()} ${currency}`)) {
+                return;
+            }
+
+            const finalAmount = (type === 'DEPOSIT') ? points : -points;
+            const title = (type === 'DEPOSIT') ? "إيداع فوري عبر وكيل" : "سحب فوري عبر وكيل";
+
+            const result = Store.updateUserBalance(phone, finalAmount, currency, title, Store.user.role);
+
+            if (result.success) {
+                showMsg(`✅ تمت العملية بنجاح! الرصيد الجديد للمشترك: ${result.newBalance.toLocaleString()} ${currency}`, "#dcfce7", "#16a34a");
+                UI.updateNavbar();
+                addLog(phone, type, points, currency);
+                // Clear amount
+                document.getElementById('points-amount').value = '';
+            } else {
+                showMsg(result.message, "#fee2e2", "#dc2626");
+            }
+        }
+
+        function showMsg(text, bg, color) {
+            const status = document.getElementById('status-msg');
+            status.style.display = 'block';
+            status.style.backgroundColor = bg;
+            status.style.color = color;
+            status.innerText = text;
+            setTimeout(() => { status.style.display = 'none'; }, 8000);
+        }
+
+        function addLog(phone, type, points, currency) {
+            const list = document.getElementById('agent-logs');
+            if (list.innerHTML.includes('بانتظار')) list.innerHTML = '';
+
+            const time = new Date().toLocaleTimeString('ar-SY');
+            list.innerHTML = `
+                <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; font-weight: 700;">
+                    <div>
+                        <span style="display:block;">${phone}</span>
+                        <span style="font-size:0.6rem; color:gray;">${time}</span>
+                    </div>
+                    <span style="color: ${type === 'DEPOSIT' ? '#16a34a' : '#dc2626'}">${type === 'DEPOSIT' ? '+' : '-'}${points.toLocaleString()} ${currency}</span>
+                </div>
+            ` + list.innerHTML;
+        }
+
+        // Restrict access to Agents and Admins only
+        document.addEventListener('DOMContentLoaded', () => {
+            if (Store.user && Store.user.role !== 'AGENT' && Store.user.role !== 'ADMIN') {
+                alert('هذه الصفحة مخصصة للوكلاء والموزعين فقط');
+                window.location.href = 'dashboard.html';
+            }
+        });
+    </script>
+</body>
+
+</html>

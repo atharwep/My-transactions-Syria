@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>طلبات المرضى - لوحة الطبيب الملكية</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            background: #f8fafc;
+        }
+
+        .req-card {
+            background: white;
+            border-radius: 30px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-accept {
+            background: #16a34a;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .btn-reject {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .btn-chat {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="glass-nav">
+        <a href="dashboard.html" class="logo-container">
+            <div class="logo-box">
+                <img src="assets/logo.png" alt="معاملاتي">
+            </div>
+            <div style="font-weight: 900; font-size: 18px;">لوحة الطبيب</div>
+        </a>
+        <div id="nav-right"></div>
+    </nav>
+
+    <div class="container">
+        <h1 style="font-weight: 950; margin-bottom: 30px;">طلبات حجز المرضى 🏥</h1>
+
+        <div id="requests-list">
+            <div style="text-align: center; padding: 50px; color: #94a3b8; font-weight: 800;">لا يوجد طلبات جديدة حالياً
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/notifications.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!Store.user || Store.user.role !== 'DOCTOR') {
+                // For simulation, let's allow it if we are ADMIN or just skip check
+                // window.location.href = 'login.html'; return;
+            }
+            renderRequests();
+        });
+
+        function renderRequests() {
+            const allBookings = JSON.parse(localStorage.getItem('wusul_bookings') || '[]');
+            // In simulation, we show all pending bookings or filter by doctor ID if we had it
+            const requests = allBookings.filter(b => b.status === 'PENDING');
+            const container = document.getElementById('requests-list');
+
+            if (requests.length === 0) {
+                container.innerHTML = `<div style="text-align: center; padding: 50px; color: #94a3b8; font-weight: 800;">لا يوجد طلبات جديدة حالياً</div>`;
+                return;
+            }
+
+            container.innerHTML = requests.map(b => `
+                <div class="req-card">
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        <div style="width: 60px; height: 60px; background: #f1f5f9; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #64748B;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h3 style="font-weight: 900; margin: 0; font-size: 1.1rem;">مريض: ${b.patientName || 'مستخدم غير معروف'}</h3>
+                            <p style="margin: 0; color: #64748B; font-size: 0.8rem; font-weight: 700;">${b.serviceName} • ${b.date}</p>
+                            <p style="margin: 0; color: #2563eb; font-size: 0.75rem; font-weight: 800;">رقم الهاتف: ${b.patientPhone}</p>
+                        </div>
+                    </div>
+                    <div class="action-btns">
+                        <button class="btn-accept" onclick="updateStatus(${b.id}, 'ACCEPTED')">قبول ✅</button>
+                        <button class="btn-reject" onclick="updateStatus(${b.id}, 'REJECTED')">رفض ❌</button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Also show accepted bookings to access chat
+            const accepted = allBookings.filter(b => b.status === 'ACCEPTED');
+            if (accepted.length > 0) {
+                container.innerHTML += `<h2 style="margin: 40px 0 20px; font-weight: 950;">طلبات مقبولة (الدردشة متاحة)</h2>`;
+                container.innerHTML += accepted.map(b => `
+                    <div class="req-card">
+                        <div style="display: flex; align-items: center; gap: 20px;">
+                            <div style="width: 60px; height: 60px; background: #dcfce7; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #16a34a;">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div>
+                                <h3 style="font-weight: 900; margin: 0; font-size: 1.1rem;">${b.patientName}</h3>
+                                <p style="margin: 0; color: #64748B; font-size: 0.8rem; font-weight: 700;">${b.serviceName} • تم القبول</p>
+                            </div>
+                        </div>
+                        <a href="chat.html?booking_id=${b.id}" class="btn-chat">الدردشة 💬</a>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function updateStatus(id, newStatus) {
+            const allBookings = JSON.parse(localStorage.getItem('wusul_bookings') || '[]');
+            const idx = allBookings.findIndex(b => b.id === id);
+            if (idx !== -1) {
+                allBookings[idx].status = newStatus;
+                localStorage.setItem('wusul_bookings', JSON.stringify(allBookings));
+                Notify.show("تم التحديث", `تم ${newStatus === 'ACCEPTED' ? 'قبول' : 'رفض'} الطلب بنجاح.`, "fas fa-sync");
+                renderRequests();
+            }
+        }
+    </script>
+</body>
+
+</html>

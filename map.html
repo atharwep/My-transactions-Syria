@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الخريطة الصحية الموحدة - معاملاتي</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #health-map {
+            height: calc(100vh - 180px);
+            border-radius: 40px;
+            border: 2px solid var(--border-rgba);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            z-index: 1;
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 100px;
+            right: 15%;
+            z-index: 1000;
+            background: rgba(10, 10, 11, 0.9);
+            backdrop-filter: blur(20px);
+            padding: 20px;
+            border-radius: 25px;
+            border: 1px solid var(--border-rgba);
+            width: 280px;
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 10px;
+            border-radius: 12px;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .filter-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .filter-item i {
+            width: 30px;
+            text-align: center;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--gold);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: rgba(15, 15, 18, 0.95) !important;
+            color: white !important;
+            border-radius: 20px !important;
+            border: 1px solid var(--gold) !important;
+            backdrop-filter: blur(10px);
+        }
+
+        .leaflet-popup-tip {
+            background: var(--gold) !important;
+        }
+
+        .map-legend {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 15px;
+            display: flex;
+            gap: 15px;
+            font-size: 0.8rem;
+            font-weight: 800;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .map-overlay {
+                position: static;
+                width: 100%;
+                margin-bottom: 20px;
+            }
+
+            #health-map {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+
+<body class="royal-dark">
+    <nav class="glass-nav">
+        <a href="index.html" class="logo-container">
+            <div class="logo-box">
+                <img src="assets/logo.png" alt="معاملاتي">
+            </div>
+            <div style="font-weight: 950; font-size: 19px; color: white;">معاملاتي</div>
+        </a>
+        <div class="nav-links">
+            <a href="index.html">الرئيسية</a>
+            <a href="map.html" class="active">الخريطة الصحية 🗺️</a>
+            <a href="emergency.html" style="color: #ef4444;">الطوارئ 🚨</a>
+        </div>
+        <div id="nav-right"></div>
+    </nav>
+
+    <div class="container" style="position: relative;">
+        <div class="map-overlay">
+            <h3 style="color: white; font-weight: 950; margin-bottom: 20px; font-size: 1.1rem;">تصفية الخدمات</h3>
+
+            <div class="filter-item" onclick="toggleMarker('doctor')">
+                <span><i class="fas fa-user-md" style="color: #4A90E2;"></i> أطباء متاحون</span>
+                <label class="switch">
+                    <input type="checkbox" checked id="filter-doctor">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="filter-item" onclick="toggleMarker('hospital')">
+                <span><i class="fas fa-hospital" style="color: #ef4444;"></i> مشافي وطوارئ</span>
+                <label class="switch">
+                    <input type="checkbox" checked id="filter-hospital">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="filter-item" onclick="toggleMarker('pharmacy')">
+                <span><i class="fas fa-pills" style="color: #10b981;"></i> صيدليات مناوبة</span>
+                <label class="switch">
+                    <input type="checkbox" checked id="filter-pharmacy">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="filter-item" onclick="toggleMarker('taxi')">
+                <span><i class="fas fa-ambulance" style="color: var(--gold);"></i> تكسي طبي</span>
+                <label class="switch">
+                    <input type="checkbox" checked id="filter-taxi">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-rgba);">
+                <button class="btn btn-primary" style="width: 100%; border-radius: 12px; font-size: 0.8rem;"
+                    onclick="findNearest()">أقرب خدمة طوارئ</button>
+            </div>
+        </div>
+
+        <div id="health-map"></div>
+
+        <div class="map-legend">
+            <div><span class="legend-dot" style="background: #ef4444;"></span> مشفى</div>
+            <div><span class="legend-dot" style="background: #10b981;"></span> صيدلية</div>
+            <div><span class="legend-dot" style="background: #4A90E2;"></span> طبيب</div>
+            <div><span class="legend-dot" style="background: var(--gold);"></span> تكسي</div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map;
+        let markers = {
+            doctor: [],
+            hospital: [],
+            pharmacy: [],
+            taxi: []
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            loadMarkers();
+        });
+
+        function initMap() {
+            // Default center Damascus
+            map = L.map('health-map', { zoomControl: false }).setView([33.5138, 36.2765], 14);
+            L.control.zoom({ position: 'bottomleft' }).addTo(map);
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Add Current User Marker
+            const userIcon = L.divIcon({
+                html: '<div style="width:20px; height:20px; background:#4A90E2; border:3px solid white; border-radius:50%; box-shadow:0 0 15px #4A90E2; animation: pulse 2s infinite;"></div>',
+                className: '',
+                iconSize: [20, 20]
+            });
+            L.marker([33.5138, 36.2765], { icon: userIcon }).addTo(map).bindPopup("<b>موقعك الحالي</b>");
+        }
+
+        function loadMarkers() {
+            // Sample Data (In production this comes from Store.getData)
+            const data = [
+                { type: 'hospital', name: 'مشفى الشامي', lat: 33.515, lng: 36.270, status: 'مفتوح (طوارئ)' },
+                { type: 'hospital', name: 'مشفى المواساة', lat: 33.510, lng: 36.265, status: 'طوارئ 24/7' },
+                { type: 'pharmacy', name: 'صيدلية الخير', lat: 33.518, lng: 36.280, pharmacist: 'د. سامر' },
+                { type: 'doctor', name: 'د. ليلى أحمد', lat: 33.520, lng: 36.275, spec: 'أطفال' },
+                { type: 'taxi', name: 'كابتن هاني (تكسي طبي)', lat: 33.512, lng: 36.278, price: 'حسب العداد' }
+            ];
+
+            data.forEach(item => {
+                const color = getColor(item.type);
+                const marker = L.circleMarker([item.lat, item.lng], {
+                    radius: 8,
+                    fillColor: color,
+                    color: "#fff",
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(map);
+
+                const popupContent = `
+                    <div style="padding:5px; text-align:right;">
+                        <h4 style="margin:0 0 5px 0; color:var(--gold);">${item.name}</h4>
+                        <p style="margin:0; font-size:0.8rem; font-weight:700;">${item.spec || item.status || 'متاح الآن'}</p>
+                        <button class="btn btn-primary" style="padding:5px 10px; margin-top:10px; font-size:0.7rem; width:100%; border-radius:8px;">طلب اتجاهات</button>
+                    </div>
+                `;
+                marker.bindPopup(popupContent);
+                markers[item.type].push(marker);
+            });
+        }
+
+        function getColor(type) {
+            switch (type) {
+                case 'hospital': return '#ef4444';
+                case 'pharmacy': return '#10b981';
+                case 'doctor': return '#4A90E2';
+                case 'taxi': return '#C5A021';
+                default: return '#fff';
+            }
+        }
+
+        function toggleMarker(type) {
+            const checkbox = document.getElementById(`filter-${type}`);
+            markers[type].forEach(m => {
+                if (checkbox.checked) map.addLayer(m);
+                else map.removeLayer(m);
+            });
+        }
+
+        function findNearest() {
+            Notify.show("جاري البحث", "نحدد أقرب نقطة طوارئ لموقعك الحالي...", "fas fa-search-location");
+            setTimeout(() => {
+                map.flyTo([33.515, 36.270], 16);
+                markers.hospital[0].openPopup();
+                Notify.show("تم العثور", "أقرب نقطة هي مشفى الشامي (3 دقائق)", "fas fa-check-circle");
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

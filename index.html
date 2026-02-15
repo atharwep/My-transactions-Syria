@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معاملاتي - منصة الخدمات الرقمية في سوريا</title>
+
+    <!-- Core Configuration -->
+    <script src="js/config.js"></script>
+
+    <!-- PWA Settings -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/9187/9187555.png">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+    <!-- Security & Integration Systems -->
+    <script src="js/security.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/twilio-sms.js"></script>
+</head>
+
+<body>
+
+    <nav class="glass-nav">
+        <a href="index.html" class="logo-container">
+            <div class="logo-box">
+                <img src="assets/logo.png" alt="معاملاتي">
+            </div>
+            <div>
+                <div style="font-weight: 950; font-size: 19px; color: white;">معاملاتي</div>
+                <div style="font-size: 9px; color: var(--gold); font-weight: 800; letter-spacing: 1.5px;">MUAMALATI
+                    SMART GATEWAY</div>
+            </div>
+        </a>
+
+        <div class="nav-links" id="nav-menu">
+            <a href="index.html" class="active">الرئيسية</a>
+            <a href="map.html">الخريطة الطبية 🗺️</a>
+            <a href="emergency.html" style="color: #ef4444; font-weight: 900;">الطوارئ 🚨</a>
+            <a href="doctors.html">الأطباء</a>
+            <a href="family.html">العائلة</a>
+        </div>
+
+        <div id="nav-right" style="display: flex; align-items: center; gap: 15px;">
+            <!-- Managed by auth.js -->
+        </div>
+
+        <div class="menu-toggle" id="mobile-toggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </nav>
+
+    <script>
+        // Mobile Menu Toggle Logic
+        const toggle = document.getElementById('mobile-toggle');
+        const menu = document.getElementById('nav-menu');
+
+        if (toggle && menu) {
+            toggle.addEventListener('click', () => {
+                toggle.classList.toggle('active');
+                menu.classList.toggle('active');
+            });
+        }
+    </script>
+
+    <div class="container hero text-center" style="padding: 120px 5% 80px;">
+        <div
+            style="display: inline-flex; align-items: center; gap: 10px; padding: 10px 20px; background: rgba(197, 160, 33, 0.1); color: var(--gold); border-radius: 50px; font-size: 12px; font-weight: 800; margin-bottom: 35px; border: 1px solid var(--border-rgba); box-shadow: 0 0 20px rgba(197, 160, 33, 0.1);">
+            🛡️ المنصة الملكية الموحدة والمعتمدة رقمياً
+        </div>
+        <h1
+            style="font-size: clamp(2.8rem, 6vw, 5rem); font-weight: 950; line-height: 1.1; margin-bottom: 30px; color: white;">
+            بوابتكم الذكية <br> <span class="gold-text" style="color: var(--gold);">للخدمات الرقمية المتكاملة</span>
+        </h1>
+        <p
+            style="color: var(--text-muted); font-size: 1.25rem; max-width: 800px; margin: 0 auto 50px; font-weight: 700;">
+            نجمع لك كافة الخدمات الأساسية من حجوزات طبية، خدمات نقل، ومحفظة مالية ذكية في منصة واحدة آمنة،
+            مصممة لتعكس رفاهية التعامل الرقمي.
+        </p>
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            <a href="login.html" class="btn btn-primary"
+                style="padding: 18px 45px; font-size: 1.1rem; border-radius: 20px;">ابدأ الآن</a>
+            <a href="emergency.html" class="btn btn-outline"
+                style="padding: 18px 45px; font-size: 1.1rem; border-radius: 20px; border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.05);">
+                <i class="fas fa-bolt"></i> وضع الطوارئ
+            </a>
+            <a href="#services" class="btn btn-outline"
+                style="padding: 18px 45px; font-size: 1.1rem; border-radius: 20px;">دليل الخدمات</a>
+        </div>
+    </div>
+
+    <div class="container" id="services">
+        <div class="grid grid-4">
+            <!-- Doctors -->
+            <a href="doctors.html" class="card text-center" style="text-decoration: none;">
+                <div
+                    style="width: 70px; height: 70px; background: rgba(197, 160, 33, 0.1); color: var(--gold); border-radius: 25px; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; font-size: 35px; border: 1px solid var(--border-rgba); box-shadow: 0 10px 20px rgba(0,0,0,0.2);">
+                    🩺</div>
+                <h3 style="font-weight: 950; margin-bottom: 15px; color: white;">حجوزات طبية</h3>
+                <p style="font-size: 0.95rem; color: var(--text-muted); font-weight: 700;">احصل على الرعاية الصحية
+                    الأفضل وحجز
+                    موعدك لدى نخبة الأطباء بخصوصية تامة.</p>
+            </a>
+
+            <!-- Taxi -->
+            <a href="taxi.html" class="card text-center" style="text-decoration: none;">
+                <div
+                    style="width: 70px; height: 70px; background: rgba(197, 160, 33, 0.1); color: var(--gold); border-radius: 25px; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; font-size: 35px; border: 1px solid var(--border-rgba); box-shadow: 0 10px 20px rgba(0,0,0,0.2);">
+                    🚕</div>
+                <h3 style="font-weight: 950; margin-bottom: 15px; color: white;">طلب تكسي</h3>
+                <p style="font-size: 0.95rem; color: var(--text-muted); font-weight: 700;">تنقل بأمان ورفاهية داخل المدن
+                    وبين المحافظات
+                    بأسعار محددة ومنافسة.</p>
+            </a>
+
+            <!-- Wallet -->
+            <a href="wallet.html" class="card text-center" style="text-decoration: none;">
+                <div
+                    style="width: 70px; height: 70px; background: rgba(197, 160, 33, 0.1); color: var(--gold); border-radius: 25px; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; font-size: 35px; border: 1px solid var(--border-rgba); box-shadow: 0 10px 20px rgba(0,0,0,0.2);">
+                    💳</div>
+                <h3 style="font-weight: 950; margin-bottom: 15px; color: white;">المحفظة الذكية</h3>
+                <p style="font-size: 0.95rem; color: var(--text-muted); font-weight: 700;">إدارة الأرصدة المتعددة، دفع
+                    الفواتير، وتحويل الأموال
+                    بأعلى معايير الأمان الرقمي.</p>
+            </a>
+
+            <!-- Applications -->
+            <a href="apply.html" class="card text-center" style="text-decoration: none;">
+                <div
+                    style="width: 70px; height: 70px; background: rgba(197, 160, 33, 0.1); color: var(--gold); border-radius: 25px; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; font-size: 35px; border: 1px solid var(--border-rgba); box-shadow: 0 10px 20px rgba(0,0,0,0.2);">
+                    🏛️</div>
+                <h3 style="font-weight: 950; margin-bottom: 15px; color: white;">معاملات عامة</h3>
+                <p style="font-size: 0.95rem; color: var(--text-muted); font-weight: 700;">خدمات تخليص المعاملات الرسمية
+                    ومراجعة
+                    الأوراق عن بعد بكفاءة واحترافية.</p>
+            </a>
+        </div>
+
+        <div class="grid grid-2" style="margin-top: 30px; gap: 30px;">
+            <!-- Hospitals -->
+            <a href="hospitals.html" class="card"
+                style="text-decoration: none; display: flex; align-items: center; gap: 25px; text-align: right;">
+                <div
+                    style="flex-shrink: 0; width: 80px; height: 80px; background: rgba(197, 160, 33, 0.1); color: var(--gold); border-radius: 25px; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 1px solid var(--border-rgba);">
+                    🏥</div>
+                <div>
+                    <h3 style="font-weight: 950; margin-bottom: 10px; color: white;">المشافي والطوارئ</h3>
+                    <p style="font-size: 0.95rem; color: var(--text-muted); font-weight: 700;">دليل شامل لأفضل المشافي،
+                        خدمات الطوارئ، وحالات العمل الفوري.</p>
+                </div>
+            </a>
+
+            <!-- Pharmacies -->
+            <a href="pharmacies.html" class="card"
+                style="text-decoration: none; display: flex; align-items: center; gap: 25px; text-align: right;">
+                <div
+                    style="flex-shrink: 0; width: 80px; height: 80px; background: rgba(16, 185, 129, 0.1); color: #10b981; border-radius: 25px; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                    💊</div>
+                <div>
+                    <h3 style="font-weight: 950; margin-bottom: 10px; color: white;">الصيدليات المناوبة</h3>
+                    <p style="font-size: 0.95rem; color: var(--text-muted); font-weight: 700;">تحديد الصيدليات المناوبة
+                        في منطقتك حالياً مع ميزة الاتصال المباشر.</p>
+                </div>
+            </a>
+        </div>
+    </div>
+    </div>
+
+    <script src="js/notifications.js"></script>
+    <script src="js/smart-notifications.js"></script>
+    <script src="js/cloud-bridge.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker: Registered'))
+                    .catch(err => console.log(`Service Worker: Error: ${err}`));
+            });
+        }
+
+        // كاشف الأخطاء للرفع
+        window.onload = () => {
+            const cssLoaded = document.styleSheets.length > 0;
+            const jsLoaded = typeof Store !== 'undefined';
+            if (!cssLoaded || !jsLoaded) {
+                console.error("⚠️ فشل تحميل الملفات الأساسية!");
+                alert("تنبيه: ملفات CSS أو JS لم يتم تحميلها بشكل صحيح. يرجى التأكد من رفع مجلدات css و js إلى GitHub بنفس مسار ملفات HTML.");
+            }
+        };
+    </script>
+    <script>
+        // Emergency Image Fixer: Handles cases where nuser.png or logo.png have double extensions like .png.png
+        document.addEventListener('error', function (e) {
+            if (e.target.tagName.toLowerCase() === 'img') {
+                const src = e.target.src;
+                if (src.endsWith('.png') && !src.endsWith('.png.png')) {
+                    e.target.src = src + '.png'; // Try .png.png fallback
+                }
+            }
+        }, true);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الصيدليات المناوبة - معاملاتي</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .pharmacy-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-rgba);
+            border-radius: 30px;
+            padding: 25px;
+            margin-bottom: 25px;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .pharmacy-card:hover {
+            background: rgba(16, 185, 129, 0.05);
+            /* Medical Green hint */
+            border-color: #10b981;
+            transform: scale(1.02);
+        }
+
+        .pharmacy-icon {
+            width: 70px;
+            height: 70px;
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            flex-shrink: 0;
+        }
+
+        .shift-badge {
+            background: rgba(197, 160, 33, 0.1);
+            color: var(--gold);
+            padding: 4px 12px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            display: inline-block;
+            margin-top: 8px;
+        }
+
+        .status-on-call {
+            color: #10b981;
+            font-size: 0.7rem;
+            font-weight: 950;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-on-call::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulseGreen 2s infinite;
+        }
+
+        @keyframes pulseGreen {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .action-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .action-circle:hover {
+            background: #10b981;
+            transform: rotate(15deg);
+        }
+    </style>
+</head>
+
+<body class="royal-dark">
+    <nav class="glass-nav">
+        <a href="index.html" class="logo-container">
+            <div class="logo-box">
+                <img src="assets/logo.png" alt="معاملاتي">
+            </div>
+            <div style="font-weight: 950; font-size: 19px; color: white;">معاملاتي</div>
+        </a>
+        <div class="nav-links" id="nav-menu">
+            <a href="index.html">الرئيسية</a>
+            <a href="hospitals.html">المشافي</a>
+            <a href="pharmacies.html" class="active">الصيدليات 💊</a>
+        </div>
+        <div id="nav-right"></div>
+    </nav>
+
+    <div class="container" style="padding-top: 50px;">
+        <div class="mb-5">
+            <div
+                style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+                <div>
+                    <h1 style="font-weight: 950; font-size: 3rem; color: white; margin-bottom: 5px;">الصيدليات المناوبة
+                    </h1>
+                    <p style="color: var(--text-muted); font-weight: 700;">خدمة البحث الفوري عن الدواء في منطقتك (ليلاً
+                        ونهاراً)</p>
+                </div>
+                <div
+                    style="background: rgba(255, 255, 255, 0.05); padding: 10px 20px; border-radius: 20px; border: 1px solid var(--border-rgba);">
+                    <p style="color: var(--gold); font-weight: 900; font-size: 0.8rem; margin: 0;">اليوم: <span
+                            id="current-day" style="color: white;">الإثنين</span></p>
+                    <p id="current-date" style="color: #94a3b8; font-size: 0.7rem; font-weight: 700; margin: 0;">9
+                        فبراير 2026</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid sidebar-layout">
+            <main>
+                <div class="card" style="margin-bottom: 25px; padding: 20px;">
+                    <div class="grid grid-3" style="gap: 15px;">
+                        <div>
+                            <label class="form-label" style="font-size: 0.7rem;">المحافظة</label>
+                            <select id="gov-search" class="form-input"
+                                onchange="LocationHelper.updateCities(this.value, 'area-search'); filterPharmacies();">
+                                <option value="">كل المحافظات</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size: 0.7rem;">المنطقة / المدينة</label>
+                            <select id="area-search" class="form-input" onchange="filterPharmacies()">
+                                <option value="">كل المناطق</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size: 0.7rem;">اسم الصيدلية</label>
+                            <input type="text" id="name-search" class="form-input" placeholder="ابحث باسم الصيدلية..."
+                                onkeyup="filterPharmacies()">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="pharmacies-list">
+                    <!-- Dynamic -->
+                </div>
+            </main>
+
+            <aside>
+                <div class="card">
+                    <h3 style="font-weight: 950; color: white; margin-bottom: 20px;">حالة الخدمة</h3>
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <div
+                            style="background: rgba(16, 185, 129, 0.1); padding: 15px; border-radius: 15px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                            <p style="color: #10b981; font-weight: 950; font-size: 0.85rem; margin-bottom: 5px;">فترة
+                                المناوبة الحالية</p>
+                            <p style="color: white; font-size: 0.75rem; font-weight: 700; margin: 0;">تعمل الصيدليات
+                                المدرجة حتى الساعة 8:00 صباحاً غداً.</p>
+                        </div>
+
+                        <div
+                            style="background: rgba(255, 255, 255, 0.02); padding: 15px; border-radius: 15px; border: 1px solid var(--border-rgba);">
+                            <h4 style="color: var(--gold); font-weight: 900; margin-bottom: 10px; font-size: 0.85rem;">
+                                📍 أقرب صيدلية إليك</h4>
+                            <p id="nearest-pharmacy" style="color: white; font-size: 0.8rem; font-weight: 700;">جاري
+                                تحديد موقعك...</p>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" style="width: 100%; margin-top: 25px; border-radius: 15px;"
+                        onclick="Notify.show('طلب دواء', 'سيتم تفعيل خدمة توصيل الأدوية قريباً 🛵', 'fas fa-truck')">
+                        خدمة التوصيل المنزلي (قريباً)
+                    </button>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/syria-data.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            LocationHelper.initGovernorates('gov-search');
+            renderPharmacies(Store.getData('pharmacies') || []);
+            updateTimeInfo();
+        });
+
+        function updateTimeInfo() {
+            const now = new Date();
+            const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+            document.getElementById('current-day').innerText = days[now.getDay()];
+            document.getElementById('current-date').innerText = now.toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
+        function renderPharmacies(data) {
+            const list = document.getElementById('pharmacies-list');
+            if (data.length === 0) {
+                list.innerHTML = `<p style="text-align:center; color:gray; padding:40px;">لا توجد صيدليات مناوبة في هذا النطاق</p>`;
+                return;
+            }
+
+            list.innerHTML = data.map(p => `
+                <div class="pharmacy-card">
+                    <div class="pharmacy-icon">
+                        <i class="fas fa-flask-medical"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <h3 style="color: white; font-weight: 950; margin: 0;">${p.name}</h3>
+                                <p style="color: #94a3b8; font-size: 0.8rem; font-weight: 700; margin: 4px 0;">${p.pharmacist}</p>
+                            </div>
+                            ${p.status === 'ON_CALL' ? '<span class="status-on-call">مناوبة الآن</span>' : '<span style="color:gray; font-size:0.7rem;">غير مناوبة</span>'}
+                        </div>
+                        <p style="color: #cbd5e1; font-size: 0.85rem; font-weight: 700; margin: 10px 0;">
+                            <i class="fas fa-location-arrow" style="color: #10b981; margin-left: 5px;"></i>${p.location}
+                        </p>
+                        <span class="shift-badge">${p.shift}</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <a href="tel:${p.phone}" class="action-circle" title="اتصال">
+                            <i class="fas fa-phone"></i>
+                        </a>
+                        <div class="action-circle" onclick="window.open('https://www.google.com/maps?q=${p.coordinates.lat},${p.coordinates.lng}', '_blank')" title="الموقع">
+                            <i class="fas fa-map-location-dot"></i>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Simple "Nearest" logic for demo
+            const onCall = data.filter(p => p.status === 'ON_CALL');
+            if (onCall.length > 0) {
+                document.getElementById('nearest-pharmacy').innerText = onCall[0].name + " (" + onCall[0].location + ")";
+            }
+        }
+
+        function filterPharmacies() {
+            const gov = document.getElementById('gov-search').value;
+            const area = document.getElementById('area-search').value.toLowerCase();
+            const name = document.getElementById('name-search').value.toLowerCase();
+            const all = Store.getData('pharmacies') || [];
+
+            const filtered = all.filter(p =>
+                (!gov || p.governorate === gov) &&
+                (p.location.toLowerCase().includes(area) || area === '') &&
+                (p.name.toLowerCase().includes(name) || name === '')
+            );
+
+            renderPharmacies(filtered);
+        }
+    </script>
+</body>
+
+</html>

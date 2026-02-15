@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حجوزات الأطباء - بوابة الخدمات العامة</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body>
+
+    <nav class="glass-nav">
+        <a href="index.html" class="logo-container">
+            <div class="logo-box">
+                <img src="assets/logo.png" alt="معاملاتي">
+            </div>
+            <div style="font-weight: 950; font-size: 19px; color: white;">معاملاتي</div>
+        </a>
+        <div class="nav-links" id="nav-menu">
+            <a href="index.html">الرئيسية</a>
+            <a href="doctors.html" class="active">الأطباء</a>
+            <a href="taxi.html">النقل</a>
+            <a href="wallet.html">المحفظة</a>
+        </div>
+        <div id="nav-right" style="display: flex; align-items: center; gap: 15px;"></div>
+    </nav>
+
+    <div id="booking-modal"
+        style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div class="card" style="max-width: 400px; width: 90%; text-align: center;">
+            <div id="modal-icon" style="font-size: 50px; margin-bottom: 20px;"></div>
+            <h3 id="modal-title" style="font-weight: 900; margin-bottom: 15px;"></h3>
+            <p id="modal-msg" style="color: #64748B; font-weight: 700; margin-bottom: 25px;"></p>
+            <button onclick="closeModal()" class="btn btn-primary" style="width: 100%;">فهمت ذلك</button>
+        </div>
+    </div>
+
+    <div class="container" style="padding-top: 60px;">
+        <div class="text-center mb-2" style="margin-bottom: 40px;">
+            <h1 style="font-weight: 950; font-size: 3rem; color: white;">دليل الأطباء المهني</h1>
+            <p style="color: var(--text-muted); font-weight: 700; font-size: 1.15rem;">احجز استشارتك الآن بلمسة ملكية
+                رقمية</p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="card" style="margin-bottom: 50px;">
+            <div class="grid grid-3" style="gap: 20px;">
+                <div>
+                    <label
+                        style="font-size: 0.8rem; font-weight: 800; color: var(--text-muted); margin-bottom: 8px; display: block;">اسم
+                        الطبيب</label>
+                    <input type="text" id="search-name" class="form-input" placeholder="مثال: د. أحمد"
+                        oninput="filterDoctors()">
+                </div>
+                <div>
+                    <label
+                        style="font-size: 0.8rem; font-weight: 800; color: var(--text-muted); margin-bottom: 8px; display: block;">الاختصاص</label>
+                    <input type="text" id="search-spec" class="form-input" placeholder="مثال: قلبية"
+                        oninput="filterDoctors()">
+                </div>
+                <div>
+                    <label
+                        style="font-size: 0.8rem; font-weight: 800; color: var(--text-muted); margin-bottom: 8px; display: block;">المحافظة</label>
+                    <select id="search-gov" class="form-input"
+                        onchange="LocationHelper.updateCities(this.value, 'search-city'); filterDoctors();">
+                        <option value="">كل المحافظات</option>
+                    </select>
+                </div>
+                <div>
+                    <label
+                        style="font-size: 0.8rem; font-weight: 800; color: var(--text-muted); margin-bottom: 8px; display: block;">المدينة</label>
+                    <select id="search-city" class="form-input" onchange="filterDoctors()">
+                        <option value="">كل المناطق</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="doctors-grid" class="grid grid-3">
+            <!-- Dynamically Loaded from auth.js Store -->
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/syria-data.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        let allDoctors = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            LocationHelper.initGovernorates('search-gov');
+            const storedDocs = Store.getData('doctors');
+            // Fallback seed inside Auth.js handles initialization, but let's ensure we load what's there
+            if (!storedDocs || storedDocs.length === 0) {
+                // Trigger init manually just in case or reload via Store
+                Store.init();
+            }
+            // Re-fetch
+            allDoctors = Store.getData('doctors').filter(d => d.isVerified === true);
+            renderDoctors(allDoctors);
+        });
+
+        function renderDoctors(doctorsList) {
+            const grid = document.getElementById('doctors-grid');
+            if (doctorsList.length === 0) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted); font-weight: 700;">لا يوجد أطباء مطابقين للبحث حالياً</div>`;
+                return;
+            }
+            grid.innerHTML = '';
+            doctorsList.forEach(dr => {
+                grid.innerHTML += `
+                    <div class="card">
+                        <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 25px;">
+                            <img src="${dr.avatar}" style="width: 75px; height: 75px; border-radius: 20px; border: 2px solid var(--border-rgba); background: rgba(255,255,255,0.05);">
+                            <div>
+                                <h3 style="font-weight: 950; font-size: 1.25rem; color: white;">${dr.name}</h3>
+                                <p style="color: var(--gold); font-weight: 900; font-size: 0.85rem;">${dr.specialty}</p>
+                                <p style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">📍 ${dr.city || 'غير محدد'}</p>
+                            </div>
+                        </div>
+                        <div style="background: rgba(197, 160, 33, 0.05); padding: 18px; border-radius: 20px; margin-bottom: 25px; border: 1px solid var(--border-rgba);">
+                            <p style="font-size: 0.9rem; font-weight: 800; color: white; display: flex; justify-content: space-between;">
+                                <span>تكلفة الحجز الملكي:</span>
+                                <span style="color: var(--gold);">${dr.displayPrice || 'حسب الخدمة'}</span>
+                            </p>
+                        </div>
+                        <a href="booking.html?id=${dr.id}" class="btn btn-primary" style="width: 100%; border-radius: 20px; font-size:1rem;">حجز استشارة 🩺</a>
+                    </div>
+                `;
+            });
+        }
+
+        function filterDoctors() {
+            const nameQuery = document.getElementById('search-name').value.toLowerCase();
+            const specQuery = document.getElementById('search-spec').value.toLowerCase();
+            const govQuery = document.getElementById('search-gov').value;
+            const cityQuery = document.getElementById('search-city').value;
+
+            const filtered = allDoctors.filter(dr => {
+                const matchName = dr.name.toLowerCase().includes(nameQuery);
+                const matchSpec = dr.specialty.toLowerCase().includes(specQuery);
+                const matchGov = govQuery ? (dr.governorate && dr.governorate === govQuery) : true;
+                const matchCity = cityQuery ? (dr.city && dr.city === cityQuery) : true;
+                return matchName && matchSpec && matchGov && matchCity;
+            });
+
+            renderDoctors(filtered);
+        }
+
+        function bookDoctor(id, name, cost) {
+            const result = Store.processTransaction(cost, `حجز لدى ${name}`, name);
+
+            const modal = document.getElementById('booking-modal');
+            const icon = document.getElementById('modal-icon');
+            const title = document.getElementById('modal-title');
+            const msg = document.getElementById('modal-msg');
+
+            if (result.success) {
+                icon.innerText = "✅";
+                title.innerText = "تم الحجز بنجاح";
+                msg.innerText = `تم خصم ${cost} نقطة من رصيدك وتأكيد موعدك مع ${name}.`;
+                UI.updateNavbar();
+            } else {
+                icon.innerText = "❌";
+                title.innerText = "تعذر الحجز";
+                msg.innerText = result.message;
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('booking-modal').style.display = 'none';
+        }
+    </script>
+</body>
+
+</html>
