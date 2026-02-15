@@ -222,6 +222,9 @@
             <div class="nav-item" onclick="showSection('health', this)">
                 <i class="fas fa-hospital"></i> المشافي والصيدليات
             </div>
+            <div class="nav-item" onclick="showSection('settings', this)">
+                <i class="fas fa-cog"></i> إعدادات النظام
+            </div>
         </nav>
 
         <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border-rgba);">
@@ -429,7 +432,54 @@
                     </p>
                 </div>
             </div>
-        </section>
+            <!-- System Settings Section -->
+            <section id="pane-settings" class="section-pane">
+                <h1 style="color: white; font-weight: 950; font-size: 2.2rem; margin-bottom: 30px;">إعدادات المنظومة
+                    المركزية</h1>
+
+                <div class="grid grid-2">
+                    <div class="admin-card">
+                        <h3
+                            style="color: white; margin-bottom: 25px; border-bottom: 1px solid var(--border-rgba); padding-bottom: 15px;">
+                            ⚙️ الإعدادات المالية</h3>
+
+                        <div style="margin-bottom: 20px;">
+                            <label class="form-label" style="color: var(--gold); font-weight: 800;">عمولة الموقع على كل
+                                حجز (%)</label>
+                            <input type="number" id="setting-commission" class="form-input" placeholder="مثال: 10"
+                                style="background: rgba(255,255,255,0.02); color:white;">
+                            <p style="color: gray; font-size: 0.7rem; margin-top: 5px;">يتم خصم هذه النسبة تلقائياً
+                                وتحويلها لمحفظة الإدارة عند قبول الطبيب للحجز.</p>
+                        </div>
+
+                        <div style="margin-bottom: 20px;">
+                            <label class="form-label" style="color: var(--gold); font-weight: 800;">الحد الأدنى للسحب
+                                (USD)</label>
+                            <input type="number" id="setting-min-withdraw" class="form-input" placeholder="مثال: 50"
+                                style="background: rgba(255,255,255,0.02); color:white;">
+                        </div>
+
+                        <button class="btn btn-primary" onclick="saveAdminSettings()"
+                            style="width: 100%; padding: 15px; border-radius: 12px; font-weight: 950;">
+                            حفظ الإعدادات الفنية ✅
+                        </button>
+                    </div>
+
+                    <div class="admin-card">
+                        <h3
+                            style="color: white; margin-bottom: 25px; border-bottom: 1px solid var(--border-rgba); padding-bottom: 15px;">
+                            📊 معلومات المنصة</h3>
+                        <div style="color: #64748b; font-size: 0.85rem; font-weight: 700; line-height: 2;">
+                            <p>إجمالي الرصيد المحول عمولات: <span id="total-commissions"
+                                    style="color: #10b981;">---</span></p>
+                            <p>تاريخ آخر تحديث للإعدادات: <span id="last-settings-update">---</span></p>
+                            <hr style="border: 0; border-top: 1px solid var(--border-rgba); margin: 15px 0;">
+                            <p style="color: var(--gold);">نظام الحماية: مفعل ✅</p>
+                            <p style="color: var(--gold);">نظام المحادثة: مفعل ✅ (بعد الحجز)</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
     </main>
 
     <!-- Detailed User Modal Container -->
@@ -470,6 +520,7 @@
         function initAdmin() {
             const users = Store.getUsers();
             const docs = Store.getData('doctors') || [];
+            const bookings = Store.getData('bookings') || [];
 
             document.getElementById('stat-total-users').innerText = users.length;
             document.getElementById('stat-total-docs').innerText = docs.filter(d => d.isVerified).length;
@@ -480,8 +531,57 @@
             document.getElementById('stat-total-usd').innerText = `$${totalUSD.toLocaleString()}`;
             document.getElementById('stat-total-syp').innerText = `${totalSYP.toLocaleString()} ل.س`;
 
+            // Statistics for Pending
+            const pendingDocs = docs.filter(d => !d.isVerified).length;
+            const pendingActionsList = document.getElementById('pending-actions-list');
+            if (pendingActionsList) {
+                pendingActionsList.innerHTML = `
+                    <div style="padding: 15px; background: rgba(255,165,0,0.1); border-radius: 12px; margin-bottom: 10px; border: 1px solid orange;">
+                        <p style="margin:0; color: orange; font-weight: 800; font-size: 0.8rem;">🩺 طلبات انضمام أطباء: ${pendingDocs}</p>
+                    </div>
+                `;
+            }
+
             renderLatestTx();
             initCharts();
+            loadAdminSettings();
+        }
+
+        function loadAdminSettings() {
+            const settings = JSON.parse(localStorage.getItem('wusul_admin_settings')) || { commission: 10, minWithdraw: 50 };
+            document.getElementById('setting-commission').value = settings.commission;
+            document.getElementById('setting-min-withdraw').value = settings.minWithdraw;
+
+            if (settings.updatedAt) {
+                document.getElementById('last-settings-update').innerText = new Date(settings.updatedAt).toLocaleString('ar-SY');
+            }
+
+            // Calculate Total Commissions from Admin Transactions
+            const admin = Store.getUsers().find(u => u.role === 'ADMIN');
+            if (admin) {
+                const txs = Store.getData('transactions').filter(t => t.userPhone === admin.phone && t.title.includes('عمولة'));
+                const sum = txs.reduce((acc, t) => acc + t.amount, 0);
+                document.getElementById('total-commissions').innerText = sum.toLocaleString() + " " + (txs[0]?.currency || 'USD');
+            }
+        }
+
+        function saveAdminSettings() {
+            const commission = parseFloat(document.getElementById('setting-commission').value);
+            const minWithdraw = parseFloat(document.getElementById('setting-min-withdraw').value);
+
+            if (isNaN(commission) || commission < 0 || commission > 100) {
+                return Notify.show("خطأ", "يرجى إدخال نسبة عمولة صحيحة (0-100)", "fas fa-times");
+            }
+
+            const settings = {
+                commission,
+                minWithdraw,
+                updatedAt: new Date().toISOString()
+            };
+
+            localStorage.setItem('wusul_admin_settings', JSON.stringify(settings));
+            Notify.show("تم الحفظ", "تم تحديث إعدادات المنظومة بنجاح ✅", "fas fa-check-circle");
+            loadAdminSettings();
         }
 
         function renderUsers() {

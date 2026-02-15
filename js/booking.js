@@ -291,77 +291,40 @@ async function processPayment() {
     const price = state.selectedService.price;
     const currency = state.selectedService.currency;
 
-    // Check specific wallet
-    let currentBalance = currency === 'USD' ? (state.user.walletUSD || 0) : (state.user.walletSYP || 0);
-
-    if (currentBalance < price) {
-        showNotification(`عذراً، رصيد محفظة ${currency} غير كافٍ`, "error");
-        closeModal();
-        return;
-    }
-
     const btn = els.confirmPayBtn;
     if (btn) {
         btn.disabled = true;
-        btn.textContent = "جاري الحجز...";
+        btn.textContent = "جاري إرسال الطلب...";
     }
 
-    setTimeout(() => {
-        // Deduct logic
-        if (currency === 'USD') {
-            state.user.walletUSD = (state.user.walletUSD || 0) - price;
-        } else {
-            state.user.walletSYP = (state.user.walletSYP || 0) - price;
+    const bookingData = {
+        doctorId: state.doctor.id,
+        doctorName: state.doctor.name,
+        doctorPhoneFallback: state.doctor.phone || "0936020439", // Fallback for simulation
+        patientPhone: state.user.phone,
+        patientName: state.user.name,
+        serviceName: state.selectedService.name,
+        price: price,
+        currency: currency,
+        clinicAddress: state.doctor.city || "دمشق - المزرعة",
+        time: formatTime(state.queue.myEstTime)
+    };
+
+    const result = await Auth.requestBooking(bookingData);
+
+    if (result.success) {
+        showNotification(result.message, "success");
+        setTimeout(() => {
+            window.location.href = 'my-bookings.html';
+        }, 1500);
+    } else {
+        showNotification(result.message, "error");
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = "تأكيد واستمرار";
         }
-
-        state.queue.myTicket = state.queue.lastTicket + 1;
-        state.queue.lastTicket++;
-
-        // Persist User
-        localStorage.setItem('wusul_user', JSON.stringify(state.user));
-
-        // Sync with Auth DB
-        const allUsers = JSON.parse(localStorage.getItem('wusul_users_db')) || [];
-        const uIdx = allUsers.findIndex(u => u.phone === state.user.phone);
-        if (uIdx !== -1) {
-            allUsers[uIdx].walletUSD = state.user.walletUSD;
-            allUsers[uIdx].walletSYP = state.user.walletSYP;
-            localStorage.setItem('wusul_users_db', JSON.stringify(allUsers));
-        }
-
-        // Save Transaction
-        const txs = JSON.parse(localStorage.getItem('wusul_db_transactions')) || [];
-        txs.unshift({
-            id: Date.now(),
-            userPhone: state.user.phone,
-            amount: -price,
-            currency: currency,
-            title: `حجز خدمة طبية: ${state.selectedService.name}`,
-            date: new Date().toLocaleString('ar-SY')
-        });
-        localStorage.setItem('wusul_db_transactions', JSON.stringify(txs));
-
-        // Save Booking for My Bookings Page
-        const bookings = JSON.parse(localStorage.getItem('wusul_bookings') || '[]');
-        const newBooking = {
-            id: Date.now(),
-            doctorId: state.doctor.id,
-            doctorName: state.doctor.name,
-            patientPhone: state.user.phone,
-            patientName: state.user.name,
-            serviceName: state.selectedService.name,
-            price: price,
-            currency: currency,
-            status: 'PENDING',
-            date: new Date().toLocaleString('ar-SY')
-        };
-        bookings.unshift(newBooking);
-        localStorage.setItem('wusul_bookings', JSON.stringify(bookings));
-        localStorage.setItem('wusul_last_booking', JSON.stringify(newBooking));
-
-        // Redirect to Details
-        window.location.href = 'booking-details.html';
-    }, 1500);
+        closeModal();
+    }
 }
 
 window.closeModal = () => {

@@ -146,6 +146,82 @@ const Store = {
             return { success: true, message: "تم تحديث بيانات الطبيب" };
         }
         return { success: false, message: "الطبيب غير موجود" };
+    },
+
+    // --- Complex Booking & Financial Logic ---
+    getCommissionRate: () => {
+        const settings = JSON.parse(localStorage.getItem('wusul_admin_settings')) || { commission: 10 }; // Default 10%
+        return settings.commission;
+    },
+
+    processBookingSettlement: (booking) => {
+        const commissionRate = Store.getCommissionRate();
+        const totalAmount = booking.price;
+        const commissionAmount = (totalAmount * commissionRate) / 100;
+        const doctorAmount = totalAmount - commissionAmount;
+
+        // 1. Deduct from Patient
+        const patientRes = Store.updateUserBalance(
+            booking.patientPhone,
+            -totalAmount,
+            booking.currency,
+            `سداد حجز: ${booking.serviceName} - د. ${booking.doctorName}`,
+            'SYSTEM'
+        );
+
+        if (!patientRes.success) return patientRes;
+
+        // 2. Add to Doctor
+        Store.updateUserBalance(
+            booking.doctorPhone || booking.doctorPhoneFallback,
+            doctorAmount,
+            booking.currency,
+            `دخل حجز (بعد الخصم): ${booking.patientName}`,
+            'SYSTEM'
+        );
+
+        // 3. Add to Admin Wallet (Commission)
+        const adminUser = Store.getUsers().find(u => u.role === 'ADMIN');
+        if (adminUser) {
+            Store.updateUserBalance(
+                adminUser.phone,
+                commissionAmount,
+                booking.currency,
+                `عمولة حجز: ${booking.id} (${booking.patientName} -> ${booking.doctorName})`,
+                'SYSTEM'
+            );
+        }
+
+        return { success: true };
+    },
+
+    // --- EMR (Electronic Medical Record) ---
+    getPatientFile: (phone) => {
+        const emr = Store.getData('emr');
+        return emr.find(e => e.patientPhone === phone) || {
+            patientPhone: phone,
+            history: "",
+            medications: "",
+            allergies: "",
+            notes: [],
+            updatedAt: null
+        };
+    },
+
+    updatePatientFile: (phone, data) => {
+        let emr = Store.getData('emr');
+        const idx = emr.findIndex(e => e.patientPhone === phone);
+        const record = {
+            ...data,
+            patientPhone: phone,
+            updatedAt: new Date().toISOString()
+        };
+
+        if (idx !== -1) emr[idx] = record;
+        else emr.push(record);
+
+        Store.setData('emr', emr);
+        return { success: true };
     }
 };
 
@@ -359,7 +435,59 @@ const Auth = {
     },
 
     approveDoctor: (phone) => Store.approveDoctor(phone),
-    deleteDoctor: (phone) => Store.deleteDoctor(phone)
+    deleteDoctor: (phone) => Store.deleteDoctor(phone),
+
+    // --- Enhanced Booking Flow ---
+    requestBooking: async (bookingData) => {
+        const user = await Auth.findUserByPhone(bookingData.patientPhone);
+        const balance = bookingData.currency === 'USD' ? user.balanceUSD : user.balanceSYP;
+
+        if (balance < bookingData.price) {
+            return { success: false, message: "رصيدك غير كافٍ لإتمام حجز الموعد. يرجى الشحن أولاً." };
+        }
+
+        const bookings = Store.getData('bookings');
+        const newBooking = {
+            ...bookingData,
+            id: Date.now(),
+            status: 'PENDING',
+            createdAt: new Date().toISOString()
+        };
+        bookings.unshift(newBooking);
+        Store.setData('bookings', bookings);
+
+        return { success: true, message: "تم إرسال طلب الحجز للطبيب بنجاح." };
+    },
+
+    settleBooking: async (bookingId) => {
+        const bookings = Store.getData('bookings');
+        const bIdx = bookings.findIndex(b => b.id == bookingId);
+        if (bIdx === -1) return { success: false, message: "الحجز غير موجود" };
+
+        const booking = bookings[bIdx];
+        if (booking.status !== 'PENDING') return { success: false, message: "تمت معالجة الحجز مسبقاً" };
+
+        const settlement = Store.processBookingSettlement(booking);
+        if (settlement.success) {
+            bookings[bIdx].status = 'ACCEPTED';
+            bookings[bIdx].settledAt = new Date().toISOString();
+            Store.setData('bookings', bookings);
+            return { success: true, message: "تم قبول الحجز وتوزيع الأرصدة بنجاح ✅" };
+        } else {
+            return settlement;
+        }
+    },
+
+    rejectBooking: async (bookingId) => {
+        const bookings = Store.getData('bookings');
+        const bIdx = bookings.findIndex(b => b.id == bookingId);
+        if (bIdx !== -1) {
+            bookings[bIdx].status = 'REJECTED';
+            Store.setData('bookings', bookings);
+            return { success: true, message: "تم رفض طلب الحجز." };
+        }
+        return { success: false };
+    }
 };
 
 // ================= UI MANAGER =================

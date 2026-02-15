@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>استمارة المريض الإلكترونية (EMR) - معاملاتي</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            background: #f8fafc;
+        }
+
+        .emr-card {
+            background: white;
+            border-radius: 30px;
+            padding: 40px;
+            margin: 100px auto 40px;
+            max-width: 900px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.02);
+        }
+
+        .section-box {
+            background: #f1f5f9;
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-weight: 950;
+            color: #1e293b;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-area {
+            width: 100%;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Almarai', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #334155;
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .h-badge {
+            background: var(--gold);
+            color: black;
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 900;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 18px;
+            background: #1e293b;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-weight: 950;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .save-btn:hover {
+            background: #0f172a;
+            transform: translateY(-2px);
+        }
+
+        .readonly {
+            background: rgba(241, 245, 249, 0.5);
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="glass-nav">
+        <div class="container" style="display: flex; align-items: center; justify-content: space-between;">
+            <a href="doctor-requests.html" class="logo-container" style="text-decoration: none; color: #1e293b;">
+                <i class="fas fa-chevron-right"></i> لوحة الإدارة
+            </a>
+            <div style="font-weight: 950; font-size: 1.1rem; color: #1e293b;">الملف الصحي الإلكتروني (EMR)</div>
+            <div></div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="emr-card">
+            <div
+                style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px;">
+                <div>
+                    <h2 id="patient-name" style="font-weight: 950; margin: 0;">جاري التحميل...</h2>
+                    <p id="patient-phone" style="margin: 0; color: #64748b; font-weight: 800;">رقم الهاتف: --</p>
+                </div>
+                <div class="h-badge">سري للغاية • بيانات مشفرة</div>
+            </div>
+
+            <div class="section-box">
+                <div class="section-title"><i class="fas fa-history" style="color: #4A90E2;"></i> التاريخ المرضي
+                    (Medical History)</div>
+                <textarea id="history" class="form-area"
+                    placeholder="أدخل هنا التاريخ المرضي للمريض بالتفصيل..."></textarea>
+            </div>
+
+            <div class="section-box">
+                <div class="section-title"><i class="fas fa-pills" style="color: #ef4444;"></i> الأدوية الحالية (Current
+                    Medications)</div>
+                <textarea id="medications" class="form-area"
+                    placeholder="قائمة الأدوية التي يتناولها المريض حالياً..."></textarea>
+            </div>
+
+            <div class="section-box">
+                <div class="section-title"><i class="fas fa-virus" style="color: #f59e0b;"></i> الحساسية (Allergies)
+                </div>
+                <textarea id="allergies" class="form-area"
+                    placeholder="هل يعاني المريض من حساسية تجاه أي دواء أو طعام؟"></textarea>
+            </div>
+
+            <div class="section-box" style="background: rgba(197, 160, 33, 0.05); border: 1px dashed var(--gold);">
+                <div class="section-title"><i class="fas fa-sticky-note" style="color: var(--gold);"></i> ملاحظات الطبيب
+                    (Doctor Notes)</div>
+                <textarea id="doctor-notes" class="form-area" style="min-height: 200px;"
+                    placeholder="تقرير الطبيب حول الحالة الحالية والتشخيص..."></textarea>
+            </div>
+
+            <div id="save-section">
+                <button class="save-btn" onclick="saveRecord()">
+                    <i class="fas fa-save"></i> حفظ وتحديث الملف الصحي
+                </button>
+            </div>
+
+            <div id="last-update"
+                style="text-align: center; margin-top: 20px; font-size: 0.75rem; color: #94a3b8; font-weight: 700;">
+                آخر تحديث: لم يتم التحديث بعد
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/notifications.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const patientPhone = urlParams.get('phone');
+        const isDoctor = Store.user && Store.user.role === 'DOCTOR';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!Store.user) { window.location.href = 'login.html'; return; }
+            if (!patientPhone) { window.location.href = 'dashboard.html'; return; }
+
+            // Get Patient Data
+            const patient = await Auth.findUserByPhone(patientPhone);
+            if (patient) {
+                document.getElementById('patient-name').innerText = `المريض: ${patient.name}`;
+                document.getElementById('patient-phone').innerText = `رقم الهاتف: ${patient.phone}`;
+            }
+
+            // Load Record
+            const record = Store.getPatientFile(patientPhone);
+            document.getElementById('history').value = record.history || "";
+            document.getElementById('medications').value = record.medications || "";
+            document.getElementById('allergies').value = record.allergies || "";
+
+            // Notes handling
+            const notesText = record.notes ? record.notes.map(n => `[${n.date}] - د. ${n.doctorName}:\n${n.text}`).join('\n\n') : "";
+            document.getElementById('doctor-notes').value = notesText;
+
+            if (record.updatedAt) {
+                document.getElementById('last-update').innerText = `آخر تحديث: ${new Date(record.updatedAt).toLocaleString('ar-SY')}`;
+            }
+
+            // Permissions
+            if (!isDoctor) {
+                document.querySelectorAll('.form-area').forEach(el => el.classList.add('readonly'));
+                document.getElementById('save-section').style.display = 'none';
+            }
+        });
+
+        function saveRecord() {
+            if (!isDoctor) return;
+
+            const record = {
+                history: document.getElementById('history').value,
+                medications: document.getElementById('medications').value,
+                allergies: document.getElementById('allergies').value,
+                notes: [
+                    {
+                        date: new Date().toLocaleDateString('ar-SY'),
+                        doctorName: Store.user.name,
+                        text: document.getElementById('doctor-notes').value
+                    }
+                ]
+            };
+
+            const res = Store.updatePatientFile(patientPhone, record);
+            if (res.success) {
+                Notify.show("تم الحفظ", "تم تحديث الملف الصحي الإلكتروني للمريض بنجاح.", "fas fa-check-circle");
+                setTimeout(() => window.location.reload(), 1500);
+            }
+        }
+    </script>
+</body>
+
+</html>

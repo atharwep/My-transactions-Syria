@@ -147,15 +147,84 @@
             }
         }
 
-        function updateStatus(id, newStatus) {
-            const allBookings = JSON.parse(localStorage.getItem('wusul_bookings') || '[]');
-            const idx = allBookings.findIndex(b => b.id === id);
-            if (idx !== -1) {
-                allBookings[idx].status = newStatus;
-                localStorage.setItem('wusul_bookings', JSON.stringify(allBookings));
-                Notify.show("تم التحديث", `تم ${newStatus === 'ACCEPTED' ? 'قبول' : 'رفض'} الطلب بنجاح.`, "fas fa-sync");
-                renderRequests();
+        async function updateStatus(id, newStatus) {
+            try {
+                let res;
+                if (newStatus === 'ACCEPTED') {
+                    res = await Auth.settleBooking(id);
+                } else {
+                    res = await Auth.rejectBooking(id);
+                }
+
+                if (res.success) {
+                    Notify.show("نجاح العملية", res.message, "fas fa-check-circle");
+                    renderRequests();
+                } else {
+                    Notify.show("خطأ", res.message, "fas fa-times-circle");
+                }
+            } catch (e) {
+                console.error(e);
+                Notify.show("خطأ", "حدث خطأ أثناء معالجة الطلب", "fas fa-bug");
             }
+        }
+
+        function renderRequests() {
+            // Read from Store.getData('bookings') instead of old 'wusul_bookings'
+            const allBookings = Store.getData('bookings');
+            const requests = allBookings.filter(b => b.status === 'PENDING');
+            const container = document.getElementById('requests-list');
+
+            let html = '';
+
+            if (requests.length === 0 && allBookings.filter(b => b.status === 'ACCEPTED').length === 0) {
+                container.innerHTML = `<div style="text-align: center; padding: 50px; color: #94a3b8; font-weight: 800;">لا يوجد طلبات جديدة حالياً</div>`;
+                return;
+            }
+
+            if (requests.length > 0) {
+                html += requests.map(b => `
+                    <div class="req-card">
+                        <div style="display: flex; align-items: center; gap: 20px;">
+                            <div style="width: 60px; height: 60px; background: #f1f5f9; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #64748B;">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div>
+                                <h3 style="font-weight: 900; margin: 0; font-size: 1.1rem;">مريض: ${b.patientName || 'مستخدم غير معروف'}</h3>
+                                <p style="margin: 0; color: #64748B; font-size: 0.8rem; font-weight: 700;">${b.serviceName} • ${b.time}</p>
+                                <p style="margin: 0; color: #2563eb; font-size: 0.75rem; font-weight: 800;">رقم الهاتف: ${b.patientPhone}</p>
+                            </div>
+                        </div>
+                        <div class="action-btns">
+                            <button class="btn-accept" onclick="updateStatus(${b.id}, 'ACCEPTED')">قبول واستلام الأتعاب ✅</button>
+                            <button class="btn-reject" onclick="updateStatus(${b.id}, 'REJECTED')">رفض ❌</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            const accepted = allBookings.filter(b => b.status === 'ACCEPTED');
+            if (accepted.length > 0) {
+                html += `<h2 style="margin: 40px 0 20px; font-weight: 950; color: #1e293b;">✅ مواعيد مؤكدة (محادثة واستمارة)</h2>`;
+                html += accepted.map(b => `
+                    <div class="req-card">
+                        <div style="display: flex; align-items: center; gap: 20px;">
+                            <div style="width: 60px; height: 60px; background: #dcfce7; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #16a34a;">
+                                <i class="fas fa-check-double"></i>
+                            </div>
+                            <div>
+                                <h3 style="font-weight: 900; margin: 0; font-size: 1.1rem;">${b.patientName}</h3>
+                                <p style="margin: 0; color: #64748B; font-size: 0.8rem; font-weight: 700;">${b.serviceName} • مدفوع</p>
+                            </div>
+                        </div>
+                        <div class="action-btns">
+                            <a href="emr.html?phone=${b.patientPhone}&booking_id=${b.id}" class="btn-chat" style="background: #10b981;">الاستمارة 📋</a>
+                            <a href="chat.html?booking_id=${b.id}" class="btn-chat">الدردشة 💬</a>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            container.innerHTML = html;
         }
     </script>
 </body>
