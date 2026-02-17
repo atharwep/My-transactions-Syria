@@ -358,6 +358,17 @@ a:active {
 }
 
 @media (max-width: 768px) {
+    .container {
+        padding: 1.5rem 4%;
+    }
+
+    .glass-nav {
+        padding: 1rem 4%;
+    }
+
+    .logo-container span {
+        font-size: 1.1rem;
+    }
 
     .grid-2,
     .grid-3 {
@@ -368,7 +379,34 @@ a:active {
         display: none;
     }
 
-    /* Handled by mobile toggle if implemented */
+    .card {
+        padding: 1.5rem;
+        border-radius: 20px;
+    }
+
+    h1 {
+        font-size: 1.8rem !important;
+    }
+
+    h2 {
+        font-size: 1.5rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 1rem 3%;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 12px 20px;
+    }
+
+    .logo-box {
+        width: 35px;
+        height: 35px;
+    }
 }
 
 /* Protection for Identity & Sensitive Images */

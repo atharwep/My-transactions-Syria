@@ -44,7 +44,7 @@ const Store = {
         );
     },
 
-    updateUserBalance: (phone, amount, currency, title, performedByRole = 'USER') => {
+    updateUserBalance: async (phone, amount, currency, title, performedByRole = 'USER') => {
         const users = Store.getUsers();
         const idx = users.findIndex(u => u.phone === phone);
         if (idx === -1) return { success: false, message: "المستخدم غير موجود" };
@@ -61,16 +61,31 @@ const Store = {
 
         Store.setUsers(users);
 
+        // 🔥 SYNC TO FIREBASE IMMEDIATELY
+        if (typeof FirebaseDB !== 'undefined') {
+            await FirebaseDB.users.update(phone, {
+                balanceUSD: users[idx].balanceUSD,
+                balanceSYP: users[idx].balanceSYP
+            });
+            console.log('✅ Balance synced to Firebase in real-time');
+        }
+
         const txs = Store.getData('transactions');
-        txs.unshift({
+        const newTx = {
             id: Date.now(),
             userPhone: phone,
             amount: amount,
             currency: currency,
             title: title,
             date: new Date().toLocaleString('ar-SY')
-        });
+        };
+        txs.unshift(newTx);
         Store.setData('transactions', txs);
+
+        // 🔥 SYNC TRANSACTION TO FIREBASE
+        if (typeof FirebaseDB !== 'undefined') {
+            await FirebaseDB.transactions.create(newTx);
+        }
 
         if (Store.user && Store.user.phone === phone) {
             Store.user.balanceUSD = users[idx].balanceUSD;
@@ -87,6 +102,13 @@ const Store = {
         if (idx !== -1) {
             doctors[idx].isVerified = true;
             Store.setData('doctors', doctors);
+
+            // 🔥 SYNC TO FIREBASE IMMEDIATELY
+            if (typeof FirebaseDB !== 'undefined') {
+                await FirebaseDB.doctors.update(doctors[idx].id, { isVerified: true });
+                console.log('✅ Doctor approval synced to Firebase in real-time');
+            }
+
             const users = Store.getUsers();
             const uIdx = users.findIndex(u => u.phone === phone);
             if (uIdx !== -1) {
@@ -125,6 +147,12 @@ const Store = {
         };
         doctors.push(newDoc);
         Store.setData('doctors', doctors);
+
+        // 🔥 SYNC TO FIREBASE IMMEDIATELY
+        if (typeof FirebaseDB !== 'undefined') {
+            await FirebaseDB.doctors.create(newDoc);
+            console.log('✅ New doctor synced to Firebase in real-time');
+        }
 
         await Auth.register(name, phone, password, 'DOCTOR', { avatar: newDoc.avatar });
         const users = Store.getUsers();

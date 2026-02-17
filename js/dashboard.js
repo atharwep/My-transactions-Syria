@@ -234,4 +234,19 @@ window.addNewDoctor = () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     Dashboard.init();
+
+    // 🔥 LISTEN TO REAL-TIME BALANCE UPDATES
+    window.addEventListener('balanceUpdated', (event) => {
+        console.log('💰 Balance updated event received:', event.detail);
+        Dashboard.renderUserInfo();
+        Dashboard.renderActivities();
+    });
+
+    // 🔥 LISTEN TO REAL-TIME DOCTORS LIST UPDATES
+    window.addEventListener('doctorsUpdated', (event) => {
+        console.log('👨‍⚕️ Doctors list updated event received:', event.detail);
+        if (Store.user && Store.user.role === 'ADMIN') {
+            Dashboard.renderPendingDoctors();
+        }
+    });
 });
