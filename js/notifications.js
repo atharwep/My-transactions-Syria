@@ -11,6 +11,22 @@ const Notify = {
         Notify.audio = new Audio(Notify.soundUrl);
         Notify.audio.load();
 
+        // One-time interaction listener to enable sound
+        document.addEventListener('click', () => {
+            if (Notify.audio && Notify.audio.paused) {
+                Notify.audio.play().then(() => Notify.audio.pause()).catch(() => { });
+            }
+        }, { once: true });
+
+        // Request System Notification Permission
+        if ("Notification" in window) {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    console.log('✅ System Notifications Enabled');
+                }
+            });
+        }
+
         // Create Container in Body if not exists
         if (!document.getElementById('royal-notif-container')) {
             const div = document.createElement('div');
@@ -28,33 +44,77 @@ const Notify = {
     playAlert: () => {
         if (Notify.audio) {
             Notify.audio.currentTime = 0;
-            Notify.audio.play().catch(e => console.log("Audio play blocked until user interaction"));
+            const promise = Notify.audio.play();
+            if (promise !== undefined) {
+                promise.catch(error => {
+                    console.log("Audio play blocked - user interaction needed");
+                });
+            }
         }
     },
 
     show: (title, message, iconClass = 'fas fa-bell') => {
+        // 1. Show In-App Notification
         const container = document.getElementById('royal-notif-container');
-        const id = 'notif-' + Date.now();
-
-        const html = `
-            <div id="${id}" class="royal-notification">
-                <div class="notif-icon"><i class="${iconClass}"></i></div>
-                <div class="notif-content">
-                    <p class="notif-title">${title}</p>
-                    <p class="notif-text">${message}</p>
+        if (container) {
+            const id = 'notif-' + Date.now();
+            const html = `
+                <div id="${id}" class="royal-notification">
+                    <div class="notif-icon"><i class="${iconClass}"></i></div>
+                    <div class="notif-content">
+                        <p class="notif-title">${title}</p>
+                        <p class="notif-text">${message}</p>
+                    </div>
+                    <i class="fas fa-times notif-close" onclick="Notify.close('${id}')"></i>
                 </div>
-                <i class="fas fa-times notif-close" onclick="Notify.close('${id}')"></i>
-            </div>
-        `;
+            `;
 
-        container.innerHTML = html;
-        const el = document.getElementById(id);
+            container.innerHTML = html; // Note: this replaces previous notification. To stack, use append/prepend.
+            // But let's stick to replacement for now to avoid clutter, or maybe prepend?
+            // The original code used innerHTML = html which replaces. Let's keep behavior but fix the variable ref.
 
-        setTimeout(() => el.classList.add('show'), 100);
+            const el = document.getElementById(id);
+            if (el) {
+                setTimeout(() => el.classList.add('show'), 100);
+                setTimeout(() => Notify.close(id), 8000);
+            }
+        }
+
         Notify.playAlert();
 
-        // Auto close after 8s
-        setTimeout(() => Notify.close(id), 8000);
+        // 2. Show System Notification (Background)
+        if ("Notification" in window && Notification.permission === "granted") {
+            // Check if page is hidden
+            if (document.hidden) {
+                const n = new Notification(title, {
+                    body: message,
+                    icon: 'https://cdn-icons-png.flaticon.com/512/9187/9187555.png', // App Logo
+                    requireInteraction: true // Keep it valid until clicked
+                });
+                n.onclick = () => window.focus();
+            }
+        }
+
+        // 3. Save to History
+        Notify.saveToHistory({ title, message, icon: iconClass, timestamp: Date.now() });
+    },
+
+    saveToHistory: (notif) => {
+        const hist = JSON.parse(localStorage.getItem('notif_history') || '[]');
+        hist.unshift(notif);
+        if (hist.length > 20) hist.pop(); // Keep last 20
+        localStorage.setItem('notif_history', JSON.stringify(hist));
+
+        // Update Badge in UI if exists
+        const badge = document.getElementById('nav-badge');
+        if (badge) {
+            const current = parseInt(badge.innerText || '0');
+            badge.innerText = current + 1;
+            badge.style.display = 'block';
+        }
+        // Also check wallet badge
+        const wBadge = document.getElementById('wallet-badge');
+        if (wBadge) wBadge.style.display = 'block';
     },
 
     close: (id) => {
@@ -85,6 +145,31 @@ const Notify = {
         }
     },
 
+    // 🔥 NEW: Send Real-Time Notification via Firebase
+    send: (targetPhone, title, message, icon = 'fas fa-bell') => {
+        if (typeof firebaseDB === 'undefined') {
+            // Fallback for local dev without firebase
+            if (Store.user && Store.user.phone === targetPhone) {
+                Notify.show(title, message, icon);
+            }
+            return;
+        }
+
+        const notifData = {
+            id: Date.now(),
+            title: title,
+            message: message,
+            icon: icon,
+            timestamp: firebase.database.ServerValue.TIMESTAMP,
+            read: false
+        };
+
+        // Push to Firebase
+        firebaseDB.ref(`notifications/${targetPhone}`).push(notifData)
+            .then(() => console.log(`📢 Notification sent to ${targetPhone}`))
+            .catch(err => console.error("Notification Error:", err));
+    },
+
     updateBadge: (count) => {
         const walletNav = document.querySelector('a[href="wallet.html"]');
         if (walletNav && Store.user.role === 'ADMIN') {
@@ -105,25 +190,6 @@ const Notify = {
 };
 
 // Global hooks for financial actions
-const originalUpdateBalance = Store.updateUserBalance;
-Store.updateUserBalance = (phone, amount, currency, title, performedByRole) => {
-    const res = originalUpdateBalance(phone, amount, currency, title, performedByRole);
-    if (res.success && Store.user && Store.user.phone === phone) {
-        if (amount < 0) {
-            Notify.show(
-                "عملية خصم/سحب",
-                `تم خصم ${Math.abs(amount).toLocaleString()} ${currency} من محفظتك. (${title})`,
-                "fas fa-minus-circle"
-            );
-        } else if (amount > 0) {
-            Notify.show(
-                "تم استلام رصيد",
-                `تمت إضافة ${amount.toLocaleString()} ${currency} إلى محفظتك بنجاح.`,
-                "fas fa-plus-circle"
-            );
-        }
-    }
-    return res;
-};
+// Global hooks removed - moved to Auth.js directly to avoid dependency issues
 
 document.addEventListener('DOMContentLoaded', Notify.init);

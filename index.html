@@ -25,13 +25,151 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
+    <meta name="view-transition" content="same-origin">
     <!-- Security & Integration Systems -->
     <script src="js/security.js"></script>
     <script src="js/firebase-config.js"></script>
     <script src="js/twilio-sms.js"></script>
+    <style>
+        .notif-center-panel {
+            position: fixed;
+            top: 70px;
+            left: 20px;
+            width: 300px;
+            background: #1e293b;
+            border: 1px solid var(--border-rgba);
+            border-radius: 16px;
+            z-index: 2000;
+            padding: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            max-height: 400px;
+            overflow-y: auto;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .notif-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 5px;
+        }
+
+        .notif-header h3 {
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--gold);
+        }
+
+        .notif-header span {
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .notif-item {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: start;
+            gap: 10px;
+        }
+
+        .notif-item:last-child {
+            border: none;
+        }
+
+        .notif-item i {
+            color: var(--gold);
+            margin-top: 3px;
+        }
+
+        .notif-item div h4 {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #fff;
+        }
+
+        .notif-item div p {
+            margin: 2px 0 0;
+            font-size: 0.7rem;
+            color: #94a3b8;
+        }
+
+        .notif-time {
+            font-size: 0.6rem;
+            color: #666;
+            margin-top: 5px;
+            display: block;
+        }
+
+        @media(max-width: 768px) {
+            .notif-center-panel {
+                left: 10px;
+                right: 10px;
+                width: auto;
+            }
+        }
+    </style>
 </head>
 
 <body>
+    <!-- Notification Center Overlay -->
+    <div id="notif-center" class="notif-center-panel" style="display:none;">
+        <div class="notif-header">
+            <h3>الإشعارات</h3>
+            <span onclick="toggleNotifCenter()">&times;</span>
+        </div>
+        <div id="notif-list" class="notif-list">
+            <div style="text-align:center; padding:20px; color:#666;">لا توجد إشعارات جديدة</div>
+        </div>
+    </div>
+
+    <script>
+        function toggleNotifCenter() {
+            const el = document.getElementById('notif-center');
+            const isHidden = el.style.display === 'none';
+            el.style.display = isHidden ? 'block' : 'none';
+
+            if (isHidden) {
+                renderNotificationHistory();
+                const badge = document.getElementById('nav-badge');
+                if (badge) { badge.style.display = 'none'; badge.innerText = '0'; }
+            }
+        }
+
+        function renderNotificationHistory() {
+            const list = document.getElementById('notif-list');
+            const localHist = JSON.parse(localStorage.getItem('notif_history') || '[]');
+
+            if (localHist.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">لا توجد إشعارات جديدة</div>';
+                return;
+            }
+
+            list.innerHTML = localHist.map(n => `
+                <div class="notif-item">
+                    <i class="${n.icon || 'fas fa-bell'}"></i>
+                    <div>
+                        <h4>${n.title}</h4>
+                        <p>${n.message}</p>
+                        <span class="notif-time">${new Date(n.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
 
     <nav class="glass-nav">
         <a href="index.html" class="logo-container">
@@ -51,6 +189,11 @@
             <a href="emergency.html" style="color: #ef4444; font-weight: 900;">الطوارئ 🚨</a>
             <a href="doctors.html">الأطباء</a>
             <a href="family.html">العائلة</a>
+            <a href="#" onclick="toggleNotifCenter()" style="position: relative;">
+                <i class="fas fa-bell"></i>
+                <span id="nav-badge"
+                    style="display:none; position:absolute; top:-5px; right:-10px; background:red; color:white; font-size:0.6rem; padding:2px 5px; border-radius:10px;">0</span>
+            </a>
         </div>
 
         <div id="nav-right" style="display: flex; align-items: center; gap: 15px;">
@@ -180,10 +323,12 @@
     </div>
     </div>
 
-    <script src="js/notifications.js"></script>
-    <script src="js/smart-notifications.js"></script>
-    <script src="js/cloud-bridge.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/realtime-sync.js"></script>
+    <script src="js/smart-notifications.js"></script>
+    <script src="js/pwa-prompt.js"></script>
+    <script src="js/cloud-bridge.js"></script>
     <script>
         // PWA Service Worker Registration
         if ('serviceWorker' in navigator) {

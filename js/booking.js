@@ -313,6 +313,24 @@ async function processPayment() {
     const result = await Auth.requestBooking(bookingData);
 
     if (result.success) {
+        // 🔥 Real-time Notification to Patient
+        if (typeof Notify !== 'undefined' && Notify.send) {
+            Notify.send(
+                state.user.phone,
+                "تم تأكيد الحجز ✅",
+                `تم حجز موعدك مع د. ${state.doctor.name} المقدر الساعة ${bookingData.time}`,
+                "fas fa-calendar-check"
+            );
+
+            // 🔥 Real-time Notification to Doctor
+            Notify.send(
+                state.doctor.phone || bookingData.doctorPhoneFallback,
+                "حجز جديد 📅",
+                `لديك مريض جديد: ${state.user.name} - ${state.selectedService.name}`,
+                "fas fa-user-plus"
+            );
+        }
+
         showNotification(result.message, "success");
         setTimeout(() => {
             window.location.href = 'my-bookings.html';

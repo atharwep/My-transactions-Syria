@@ -285,6 +285,43 @@
             document.getElementById(id).classList.add('active');
         }
 
+        // Helper to toggle required attributes
+        function updateInputRequirements(isRequired) {
+            const avatarInput = document.getElementById('user-avatar-file');
+            const idInput = document.getElementById('user-id-file');
+
+            if (avatarInput) avatarInput.required = isRequired;
+            if (idInput) idInput.required = isRequired;
+
+            console.log("Updated Input Requirements: KYC Required =", isRequired);
+        }
+
+        // Load System Settings
+        window.addEventListener('load', () => {
+            // Initial check based on local config
+            updateInputRequirements(CONFIG.REQUIRE_IDENTITY_VERIFICATION);
+
+            if (typeof firebaseDB !== 'undefined') {
+                firebaseDB.ref('settings/kyc_required').once('value', (snapshot) => {
+                    const isRequired = snapshot.val();
+                    if (isRequired !== null) {
+                        window.CLOUD_KYC_REQUIRED = isRequired;
+                        console.log("System Setting Loaded: KYC Required =", isRequired);
+
+                        // Update UI
+                        updateInputRequirements(isRequired);
+
+                        const kycTitle = document.querySelector('#kyc-fields h4');
+                        if (kycTitle) {
+                            kycTitle.innerHTML = isRequired
+                                ? '🛡️ نظام التحقق الذكي (AI Identity) <span style="color:red;font-size:0.7em">(مطلوب)</span>'
+                                : '🛡️ نظام التحقق الذكي (AI Identity) <span style="color:green;font-size:0.7em">(اختياري)</span>';
+                        }
+                    }
+                });
+            }
+        });
+
         function toggleDoctorFields() {
             const isDoctor = document.getElementById('is-doctor-check').checked;
             const fields = document.getElementById('doctor-fields');
@@ -379,30 +416,50 @@
             // TRIGGER AI SCANNER
             const scanner = document.getElementById('ai-scanner-overlay');
             const scanStatus = document.getElementById('scan-status');
-            scanner.style.display = 'flex';
-            btn.disabled = true;
 
             // AI Simulation Logic
             const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+            // Default KYC data if not required
+            let kycData = {
+                avatar: "assets/nuser.png",
+                idCardImage: null
+            };
+
+            // Check if KYC is required (Cloud Override > Local Config)
+            const isKYCRequired = (typeof window.CLOUD_KYC_REQUIRED !== 'undefined')
+                ? window.CLOUD_KYC_REQUIRED
+                : CONFIG.REQUIRE_IDENTITY_VERIFICATION;
+
             try {
-                // 1. Load Real AI Models
-                await loadAIModels();
+                if (isKYCRequired) {
+                    // Start Scanning
+                    scanner.style.display = 'flex';
+                    btn.disabled = true;
 
-                // 2. Real Neural Network Verification
-                scanStatus.innerHTML = '<i class="fas fa-microchip"></i> جاري مطابقة البصمة الحيوية للوجه...';
-                await verifyIdentityAI(avatarPreview, idPreview);
+                    // 1. Load Real AI Models
+                    await loadAIModels();
 
-                scanStatus.innerHTML = '<i class="fas fa-shield-v"></i> تم التحقق بنجاح! جاري معالجة البيانات...';
+                    // 2. Real Neural Network Verification
+                    scanStatus.innerHTML = '<i class="fas fa-microchip"></i> جاري مطابقة البصمة الحيوية للوجه...';
+                    await verifyIdentityAI(avatarPreview, idPreview);
 
-                // Process Files
-                const avatarBase64 = await fileToBase64(avatarFile);
-                const idCardBase64 = await fileToBase64(idCardFile);
+                    scanStatus.innerHTML = '<i class="fas fa-shield-v"></i> تم التحقق بنجاح! جاري معالجة البيانات...';
 
-                let kycData = {
-                    avatar: avatarBase64,
-                    idCardImage: idCardBase64
-                };
+                    // Process Files
+                    const avatarBase64 = await fileToBase64(avatarFile);
+                    const idCardBase64 = await fileToBase64(idCardFile);
+
+                    kycData = {
+                        avatar: avatarBase64,
+                        idCardImage: idCardBase64
+                    };
+                } else {
+                    // Try to get avatar if provided, otherwise default
+                    if (avatarFile) {
+                        kycData.avatar = await fileToBase64(avatarFile);
+                    }
+                }
 
                 if (isDoctor) {
                     role = 'DOCTOR';
@@ -417,7 +474,7 @@
                 const res = await Auth.register(name, phone, password, role, kycData);
 
                 if (res.success) {
-                    // Update user as verified since AI passed
+                    // Update user as verified since AI passed OR not required
                     const users = Store.getUsers();
                     const idx = users.findIndex(u => u.phone === phone);
                     if (idx !== -1) {

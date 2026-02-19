@@ -196,9 +196,13 @@
                 </label>
             </div>
 
-            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-rgba);">
-                <button class="btn btn-primary" style="width: 100%; border-radius: 12px; font-size: 0.8rem;"
-                    onclick="findNearest()">أقرب خدمة طوارئ</button>
+            <div
+                style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-rgba); display:flex; gap:10px;">
+                <button class="btn btn-primary" style="flex:1; border-radius: 12px; font-size: 0.8rem;"
+                    onclick="findNearest()">أقرب طوارئ</button>
+                <button class="btn btn-outline"
+                    style="flex:1; border-radius: 12px; font-size: 0.8rem; color:white; border-color:white;"
+                    onclick="locateUser()"><i class="fas fa-crosshairs"></i> موقعي</button>
             </div>
         </div>
 
@@ -218,12 +222,23 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         let map;
-        let markers = {
+        let userMarker;
+        let userLocation = { lat: 33.5138, lng: 36.2765 }; // Default Damascus
+        let markersObj = {
             doctor: [],
             hospital: [],
             pharmacy: [],
             taxi: []
         };
+
+        // Sample Data with Real Coords simulation
+        const locationsData = [
+            { type: 'hospital', name: 'مشفى الشامي', lat: 33.515, lng: 36.270, status: 'مفتوح (طوارئ)' },
+            { type: 'hospital', name: 'مشفى المواساة', lat: 33.510, lng: 36.265, status: 'طوارئ 24/7' },
+            { type: 'pharmacy', name: 'صيدلية الخير', lat: 33.518, lng: 36.280, pharmacist: 'د. سامر' },
+            { type: 'doctor', name: 'د. ليلى أحمد', lat: 33.520, lng: 36.275, spec: 'أطفال' },
+            { type: 'taxi', name: 'كابتن هاني (تكسي طبي)', lat: 33.512, lng: 36.278, price: 'حسب العداد' }
+        ];
 
         document.addEventListener('DOMContentLoaded', () => {
             initMap();
@@ -231,34 +246,64 @@
         });
 
         function initMap() {
-            // Default center Damascus
-            map = L.map('health-map', { zoomControl: false }).setView([33.5138, 36.2765], 14);
+            // Initialize Map
+            map = L.map('health-map', { zoomControl: false }).setView([userLocation.lat, userLocation.lng], 14);
             L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
+            // Dark Mode Tiles
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '© OpenStreetMap contributors'
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
             }).addTo(map);
 
-            // Add Current User Marker
+            // User Icon
+            const userIconHtml = `<div style="width:20px; height:20px; background:#4A90E2; border:3px solid white; border-radius:50%; box-shadow:0 0 15px #4A90E2; animation: pulse 2s infinite;"></div>`;
             const userIcon = L.divIcon({
-                html: '<div style="width:20px; height:20px; background:#4A90E2; border:3px solid white; border-radius:50%; box-shadow:0 0 15px #4A90E2; animation: pulse 2s infinite;"></div>',
-                className: '',
+                html: userIconHtml,
+                className: 'user-marker-pulse',
                 iconSize: [20, 20]
             });
-            L.marker([33.5138, 36.2765], { icon: userIcon }).addTo(map).bindPopup("<b>موقعك الحالي</b>");
+
+            userMarker = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map)
+                .bindPopup("<b>موقعك الافتراضي</b><br>جاري تحديد الموقع الحقيقي...");
+
+            // Request Real Location
+            locateUser();
+        }
+
+        function locateUser() {
+            if (!navigator.geolocation) {
+                Notify.show("غير مدعوم", "المتصفح لا يدعم تحديد الموقع", "fas fa-exclamation-triangle");
+                return;
+            }
+
+            Notify.show("جار التحديد", "نحاول الوصول لموقعك الحالي...", "fas fa-satellite-dish");
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    userLocation = {
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude
+                    };
+
+                    // Update Map & Marker
+                    map.flyTo([userLocation.lat, userLocation.lng], 16);
+                    userMarker.setLatLng([userLocation.lat, userLocation.lng]);
+                    userMarker.setPopupContent("<b>موقعك الحالي</b><br>تم التحديد بدقة");
+                    userMarker.openPopup();
+
+                    Notify.show("تم التحديد", "تم تحديث الخريطة لموقعك الحالي", "fas fa-map-marker-alt");
+                },
+                (err) => {
+                    console.error(err);
+                    Notify.show("تعذر التحديد", "يرجى تفعيل GPS والموافقة على الصلاحيات", "fas fa-times-circle");
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
         }
 
         function loadMarkers() {
-            // Sample Data (In production this comes from Store.getData)
-            const data = [
-                { type: 'hospital', name: 'مشفى الشامي', lat: 33.515, lng: 36.270, status: 'مفتوح (طوارئ)' },
-                { type: 'hospital', name: 'مشفى المواساة', lat: 33.510, lng: 36.265, status: 'طوارئ 24/7' },
-                { type: 'pharmacy', name: 'صيدلية الخير', lat: 33.518, lng: 36.280, pharmacist: 'د. سامر' },
-                { type: 'doctor', name: 'د. ليلى أحمد', lat: 33.520, lng: 36.275, spec: 'أطفال' },
-                { type: 'taxi', name: 'كابتن هاني (تكسي طبي)', lat: 33.512, lng: 36.278, price: 'حسب العداد' }
-            ];
-
-            data.forEach(item => {
+            locationsData.forEach(item => {
                 const color = getColor(item.type);
                 const marker = L.circleMarker([item.lat, item.lng], {
                     radius: 8,
@@ -272,12 +317,26 @@
                 const popupContent = `
                     <div style="padding:5px; text-align:right;">
                         <h4 style="margin:0 0 5px 0; color:var(--gold);">${item.name}</h4>
-                        <p style="margin:0; font-size:0.8rem; font-weight:700;">${item.spec || item.status || 'متاح الآن'}</p>
-                        <button class="btn btn-primary" style="padding:5px 10px; margin-top:10px; font-size:0.7rem; width:100%; border-radius:8px;">طلب اتجاهات</button>
+                        <p style="margin:0; font-size:0.8rem; font-weight:700; color:#ddd;">${item.spec || item.status || 'متاح الآن'}</p>
+                        <p style="margin:5px 0 0; font-size:0.7rem; color:#aaa;">المسافة: <span class="dist-val" data-lat="${item.lat}" data-lng="${item.lng}">...</span> كم</p>
+                        <button class="btn btn-primary" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}')" style="padding:8px 10px; margin-top:10px; font-size:0.7rem; width:100%; border-radius:8px; cursor:pointer;">
+                            <i class="fas fa-directions"></i> الاتجاهات
+                        </button>
                     </div>
                 `;
                 marker.bindPopup(popupContent);
-                markers[item.type].push(marker);
+
+                // Add click listener to recalc distance when opened
+                marker.on('click', () => {
+                    const dist = calculateDistance(userLocation.lat, userLocation.lng, item.lat, item.lng);
+                    setTimeout(() => {
+                        const el = document.querySelector('.dist-val[data-lat="' + item.lat + '"]');
+                        if (el) el.innerText = dist.toFixed(2);
+                    }, 100);
+                });
+
+                if (!markersObj[item.type]) markersObj[item.type] = [];
+                markersObj[item.type].push(marker);
             });
         }
 
@@ -293,19 +352,58 @@
 
         function toggleMarker(type) {
             const checkbox = document.getElementById(`filter-${type}`);
-            markers[type].forEach(m => {
-                if (checkbox.checked) map.addLayer(m);
-                else map.removeLayer(m);
+            if (!markersObj[type]) return;
+
+            markersObj[type].forEach(m => {
+                if (checkbox.checked) {
+                    if (!map.hasLayer(m)) map.addLayer(m);
+                } else {
+                    if (map.hasLayer(m)) map.removeLayer(m);
+                }
             });
         }
 
         function findNearest() {
-            Notify.show("جاري البحث", "نحدد أقرب نقطة طوارئ لموقعك الحالي...", "fas fa-search-location");
-            setTimeout(() => {
-                map.flyTo([33.515, 36.270], 16);
-                markers.hospital[0].openPopup();
-                Notify.show("تم العثور", "أقرب نقطة هي مشفى الشامي (3 دقائق)", "fas fa-check-circle");
-            }, 1500);
+            Notify.show("جاري البحث", "نبحث عن أقرب خدمة طوارئ...", "fas fa-search-location");
+
+            // Simple Euclidian Sort
+            const sorted = locationsData.filter(i => i.type === 'hospital').map(item => {
+                return {
+                    ...item,
+                    dist: calculateDistance(userLocation.lat, userLocation.lng, item.lat, item.lng)
+                };
+            }).sort((a, b) => a.dist - b.dist);
+
+            if (sorted.length > 0) {
+                const nearest = sorted[0];
+                map.flyTo([nearest.lat, nearest.lng], 16);
+
+                setTimeout(() => {
+                    // Find the marker object to open popup
+                    // In a real app we would map data IDs to marker objects. 
+                    // Here we just look into markersObj['hospital'] roughly or creates a temp popup
+                    L.popup()
+                        .setLatLng([nearest.lat, nearest.lng])
+                        .setContent(`<b style="color:var(--gold)">الأقرب: ${nearest.name}</b><br>يبعد ${nearest.dist.toFixed(2)} كم`)
+                        .openOn(map);
+
+                    Notify.show("تم العثور", `الأقرب: ${nearest.name} (${nearest.dist.toFixed(1)} كم)`, "fas fa-check-circle");
+                }, 1500);
+            } else {
+                Notify.show("خطأ", "لا يوجد مشافي في البيانات", "fas fa-times");
+            }
+        }
+
+        // Haversine Formula for generic distance (km)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
         }
     </script>
 </body>

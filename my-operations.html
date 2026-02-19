@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>عملياتي المالية - معاملاتي</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        <style>body {
+            background-color: #0f172a;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-bottom: 80px;
+        }
+
+        .header-section {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, rgba(197, 160, 33, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+            border: 1px solid rgba(197, 160, 33, 0.2);
+            border-radius: 20px;
+            padding: 20px;
+            margin: 20px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-val {
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            font-weight: 700;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            padding: 0 20px 20px;
+        }
+
+        .chart-box {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 15px;
+            position: relative;
+            height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+            padding: 0 20px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 12px;
+            color: #94a3b8;
+            font-weight: 800;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .tab-btn.active {
+            background: var(--gold);
+            color: black;
+            border-color: var(--gold);
+        }
+
+        .ops-list {
+            padding: 0 20px;
+        }
+
+        .op-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 18px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .op-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-left: 15px;
+        }
+
+        .type-sent {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .type-received {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .type-service {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        .op-info h4 {
+            margin: 0;
+            font-size: 0.9rem;
+            font-weight: 800;
+        }
+
+        .op-info p {
+            margin: 3px 0 0;
+            font-size: 0.7rem;
+            color: #64748B;
+        }
+
+        .op-amount {
+            text-align: left;
+            font-weight: 900;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="glass-nav">
+        <div class="container" style="display: flex; align-items: center; justify-content: space-between;">
+            <a href="index.html" class="logo-container" style="text-decoration: none;">
+                <i class="fas fa-chevron-right" style="color: white;"></i>
+            </a>
+            <div style="font-weight: 950; font-size: 1.2rem; color: white;">عملياتي المالية 🧾</div>
+            <div style="width: 20px;"></div>
+        </div>
+    </nav>
+
+    <div class="summary-card">
+        <div class="stat-item">
+            <div class="stat-val" id="total-spent" style="color: #ef4444;">0</div>
+            <div class="stat-label">المصروفات</div>
+        </div>
+        <div style="width: 1px; height: 30px; background: rgba(255,255,255,0.1);"></div>
+        <div class="stat-item">
+            <div class="stat-val" id="total-income" style="color: #10b981;">0</div>
+            <div class="stat-label">الواردات</div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-grid">
+        <div class="chart-box">
+            <canvas id="balanceChart"></canvas>
+        </div>
+        <div class="chart-box">
+            <canvas id="expensesChart"></canvas>
+        </div>
+    </div>
+
+    <div class="filter-tabs">
+        <button class="tab-btn active" onclick="filterOps('ALL')">الكل</button>
+        <button class="tab-btn" onclick="filterOps('SENT')">صادر</button>
+        <button class="tab-btn" onclick="filterOps('RECEIVED')">وارد</button>
+        <button class="tab-btn" onclick="filterOps('BOOKING')">حجوزات</button>
+    </div>
+
+    <div class="ops-list" id="ops-container">
+        <!-- JS will populate -->
+        <div style="text-align: center; color: #64748b; margin-top: 50px;">جاري التحميل...</div>
+    </div>
+
+    <!-- Core Libs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- ChartJS Added -->
+    <script src="js/config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/realtime-sync.js"></script>
+
+    <script>
+        let allOperations = [];
+        let currency = 'SYP'; // Default display currency
+        let trendChart = null;
+        let pieChart = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!Store.user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Load Data
+            await loadOperations();
+        });
+
+        async function loadOperations() {
+            // 1. Get Transactions
+            const txs = await getTransactions();
+            // 2. Get Bookings
+            const bookings = Store.getData('bookings').filter(b => b.patientPhone === Store.user.phone);
+
+            // Merge and Normalize
+            allOperations = [];
+
+            // Add Transactions
+            txs.forEach(tx => {
+                allOperations.push({
+                    type: tx.amount < 0 ? 'SENT' : 'RECEIVED',
+                    title: tx.title || (tx.amount < 0 ? 'تحويل صادر' : 'رصيد وارد'),
+                    date: tx.createdAt || tx.timestamp || Date.now(),
+                    amount: Math.abs(tx.amount),
+                    currency: tx.currency || 'SYP',
+                    icon: tx.amount < 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'
+                });
+            });
+
+            // Add Bookings
+            bookings.forEach(b => {
+                allOperations.push({
+                    type: 'BOOKING',
+                    title: `حجز: ${b.serviceName || 'خدمة طبية'}`,
+                    date: b.id,
+                    amount: b.price || 0,
+                    currency: b.currency || 'SYP',
+                    status: b.status,
+                    icon: 'fas fa-file-invoice'
+                });
+            });
+
+            // Sort by Date Desc
+            allOperations.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            calculateTotals();
+            renderOps(allOperations);
+            renderCharts(allOperations);
+        }
+
+        async function getTransactions() {
+            if (typeof FirebaseDB !== 'undefined') {
+                const res = await FirebaseDB.transactions.getByUser(Store.user.phone);
+                if (res.success) return res.data;
+            }
+            return Store.getData('transactions').filter(t => t.userPhone === Store.user.phone);
+        }
+
+        function calculateTotals() {
+            let income = 0;
+            let spent = 0;
+
+            allOperations.forEach(op => {
+                if (op.currency !== 'SYP') return;
+                if (op.type === 'RECEIVED') income += op.amount;
+                if (op.type === 'SENT' || op.type === 'BOOKING') spent += op.amount;
+            });
+
+            document.getElementById('total-income').innerText = '+' + income.toLocaleString();
+            document.getElementById('total-spent').innerText = '-' + spent.toLocaleString();
+        }
+
+        function renderOps(list) {
+            const container = document.getElementById('ops-container');
+            if (list.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #64748b; margin-top: 50px; font-weight: 700;">لا يوجد عمليات لعرضها</div>';
+                return;
+            }
+
+            container.innerHTML = list.map(op => {
+                let colorClass = '';
+                let amountPrefix = '';
+                if (op.type === 'RECEIVED') { colorClass = 'type-received'; amountPrefix = '+'; }
+                else if (op.type === 'SENT' || op.type === 'BOOKING') { colorClass = 'type-sent'; amountPrefix = '-'; }
+                else { colorClass = 'type-service'; amountPrefix = ''; }
+
+                return `
+                <div class="op-card">
+                    <div style="display: flex; align-items: center;">
+                        <div class="op-icon ${colorClass}">
+                            <i class="${op.icon}"></i>
+                        </div>
+                        <div class="op-info" style="margin-right: 15px;">
+                            <h4>${op.title}</h4>
+                            <p>${new Date(op.date).toLocaleDateString('ar-SY')} • ${new Date(op.date).toLocaleTimeString('ar-SY', { hour: '2-digit', minute: '2-digit' })}</p>
+                            ${op.status ? `<span style="font-size:0.6rem; background:#333; padding:2px 5px; border-radius:4px;">${op.status}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="op-amount" style="color: ${op.type === 'RECEIVED' ? '#10b981' : '#ef4444'}">
+                        ${amountPrefix}${op.amount > 0 ? op.amount.toLocaleString() : '---'} <span style="font-size:0.7rem;">${op.currency}</span>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function renderCharts(ops) {
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.font.family = 'Segoe UI';
+
+            // Data Prep
+            const today = new Date();
+            const monthlyData = { income: Array(6).fill(0), expense: Array(6).fill(0) }; // Last 6 months
+            const labels = [];
+
+            // Generate Labels for last 6 months
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                labels.push(d.toLocaleDateString('ar-SY', { month: 'short' }));
+            }
+
+            // Populate Data
+            ops.forEach(op => {
+                if (op.currency !== 'SYP') return;
+                const date = new Date(op.date);
+                const monthDiff = (today.getFullYear() - date.getFullYear()) * 12 + (today.getMonth() - date.getMonth());
+
+                if (monthDiff >= 0 && monthDiff < 6) {
+                    const idx = 5 - monthDiff;
+                    if (op.type === 'RECEIVED') monthlyData.income[idx] += op.amount;
+                    if (op.type === 'SENT' || op.type === 'BOOKING') monthlyData.expense[idx] += op.amount;
+                }
+            });
+
+            // 1. Balance Trend Chart (Bar)
+            const ctx1 = document.getElementById('balanceChart').getContext('2d');
+            if (trendChart) trendChart.destroy();
+
+            trendChart = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'دخل',
+                            data: monthlyData.income,
+                            backgroundColor: '#10b981',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'صرف',
+                            data: monthlyData.expense,
+                            backgroundColor: '#ef4444',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        title: { display: true, text: 'تحليل مالي (آخر 6 أشهر)' }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            beginAtZero: true
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // 2. Breakdown Chart (Doughnut)
+            // Categorize expenses
+            let catData = { sent: 0, booking: 0 };
+            ops.forEach(op => {
+                if (op.currency !== 'SYP') return;
+                if (op.type === 'SENT') catData.sent += op.amount;
+                if (op.type === 'BOOKING') catData.booking += op.amount;
+            });
+
+            const ctx2 = document.getElementById('expensesChart').getContext('2d');
+            if (pieChart) pieChart.destroy();
+
+            pieChart = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['تحويلات', 'حجوزات', 'أخرى'],
+                    datasets: [{
+                        data: [catData.sent, catData.booking, 0], // 'Other' is 0 for now
+                        backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        title: { display: true, text: 'توزيع المصاريف' }
+                    }
+                }
+            });
+        }
+
+        window.filterOps = function (filter) {
+            // Update UI
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (filter === 'ALL') {
+                renderOps(allOperations);
+            } else {
+                renderOps(allOperations.filter(op => op.type === filter));
+            }
+        }
+    </script>
+</body>
+
+</html>

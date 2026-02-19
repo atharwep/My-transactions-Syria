@@ -1,18 +1,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap');
 
 :root {
-    --primary: #4A90E2;
-    --gold: #C5A021;
-    --gold-light: #E8D081;
-    --gold-dark: #8B6F14;
-    --bg-dark: #0A0A0B;
-    --card-bg: rgba(255, 255, 255, 0.03);
-    --border-rgba: rgba(197, 160, 33, 0.2);
-    --text-white: #FFFFFF;
-    --text-muted: #94A3B8;
-    --glass: rgba(10, 10, 11, 0.85);
-    --card-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-    --royal-gradient: linear-gradient(135deg, #C5A021 0%, #8B6F14 50%, #E8D081 100%);
+    --primary: #4f46e5;
+    /* Deeper indigo */
+    --gold: #D4AF37;
+    /* True Gold */
+    --gold-light: #F9E076;
+    --gold-dark: #AA8C2C;
+    --bg-dark: #0f172a;
+    /* Slate 900 - richer dark */
+    --card-bg: rgba(30, 41, 59, 0.7);
+    /* Slate 800 with opacity */
+    --border-rgba: rgba(212, 175, 55, 0.3);
+    --text-white: #f8fafc;
+    --text-muted: #cbd5e1;
+    /* Slate 300 - lighter for better readability */
+    --glass: rgba(15, 23, 42, 0.85);
+    --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    --royal-gradient: linear-gradient(135deg, #D4AF37 0%, #AA8C2C 100%);
+    --success: #10b981;
+    --danger: #ef4444;
 }
 
 * {
@@ -25,8 +32,9 @@
 
 body {
     background-color: var(--bg-dark);
-    background-image: radial-gradient(circle at top right, rgba(197, 160, 33, 0.05), transparent),
-        radial-gradient(circle at bottom left, rgba(124, 58, 237, 0.05), transparent);
+    background-image:
+        radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(79, 70, 229, 0.15) 0px, transparent 50%);
     background-attachment: fixed;
     color: var(--text-white);
     min-height: 100vh;
@@ -347,9 +355,15 @@ a:active {
 }
 
 /* Responsive */
+/* Responsive */
 @media (max-width: 1024px) {
     .sidebar-layout {
         grid-template-columns: 1fr;
+    }
+
+    .wallet-screen {
+        grid-template-columns: 1fr;
+        gap: 20px;
     }
 
     .grid-4 {
@@ -370,9 +384,18 @@ a:active {
         font-size: 1.1rem;
     }
 
+    /* Force Vertical Stacking on Mobile */
+    .grid,
     .grid-2,
-    .grid-3 {
+    .grid-3,
+    .grid-4 {
+        grid-template-columns: 1fr !important;
+        gap: 20px;
+    }
+
+    .action-grid {
         grid-template-columns: 1fr;
+        /* Stack buttons in wallet */
     }
 
     .nav-links {
@@ -381,7 +404,17 @@ a:active {
 
     .card {
         padding: 1.5rem;
-        border-radius: 20px;
+        border-radius: 24px;
+        flex-direction: column;
+        /* Stack internals of cards if flex */
+        text-align: center;
+    }
+
+    /* Specific fix for the home cards that were flex-row */
+    a.card[style*="display: flex"] {
+        flex-direction: column !important;
+        text-align: center !important;
+        align-items: center !important;
     }
 
     h1 {
@@ -400,12 +433,17 @@ a:active {
 
     .btn {
         width: 100%;
-        padding: 12px 20px;
+        padding: 14px 20px;
     }
 
     .logo-box {
         width: 35px;
         height: 35px;
+    }
+
+    /* Ensure P-BTN in wallet stack properly */
+    .p-btn {
+        width: 100%;
     }
 }
 
@@ -422,8 +460,55 @@ a:active {
     }
 }
 
-.identity-view {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
+/* Skeleton Loading */
+.skeleton {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    color: transparent !important;
+}
+
+.skeleton::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+    animation: skeleton-shimmer 1.5s infinite;
+}
+
+@keyframes skeleton-shimmer {
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+.skeleton-text {
+    height: 1em;
+    width: 70%;
+    margin-bottom: 0.5em;
+    border-radius: 4px;
+}
+
+.skeleton-circle {
+    border-radius: 50%;
+}
+
+.skeleton-card {
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* View Transitions */
+@view-transition {
+    navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 0.4s;
+    mix-blend-mode: normal;
 }

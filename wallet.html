@@ -11,43 +11,30 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
-            --gold-main: #C5A021;
-            --gold-light: #E8D081;
-            --gold-dark: #8B6F14;
-            --bg-dark: #0A0A0B;
-            --card-bg: rgba(255, 255, 255, 0.03);
-            --border-rgba: rgba(197, 160, 33, 0.2);
+            --gold-main: #D4AF37;
+            --gold-light: #F9E076;
+            --gold-dark: #AA8C2C;
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border-rgba: rgba(212, 175, 55, 0.25);
         }
 
         body {
             background-color: var(--bg-dark);
             color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Almarai', sans-serif;
+            /* Unify font */
             margin: 0;
             overflow-x: hidden;
+            background-image:
+                radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(79, 70, 229, 0.1) 0px, transparent 50%);
+            background-attachment: fixed;
         }
 
         .aura {
-            position: fixed;
-            width: 400px;
-            height: 400px;
-            filter: blur(120px);
-            border-radius: 50%;
-            z-index: -1;
-            opacity: 0.15;
-            pointer-events: none;
-        }
-
-        .aura-gold {
-            background: var(--gold-main);
-            top: -100px;
-            left: -100px;
-        }
-
-        .aura-purple {
-            background: #7C3AED;
-            bottom: -100px;
-            right: -100px;
+            display: none;
+            /* Removed for performance and cleaner look */
         }
 
         .header-section {
@@ -62,9 +49,9 @@
         .back-btn {
             width: 45px;
             height: 45px;
-            background: var(--card-bg);
-            border: 1px solid var(--border-rgba);
-            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -74,6 +61,7 @@
         }
 
         .back-btn:hover {
+            background: rgba(212, 175, 55, 0.2);
             border-color: var(--gold-main);
             transform: translateX(5px);
         }
@@ -84,21 +72,18 @@
 
         .royal-title h1 {
             margin: 0;
-            font-weight: 900;
-            font-size: 1.8rem;
-            background: linear-gradient(to bottom, #FFF, var(--gold-light));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            font-size: 1.6rem;
+            color: #fff;
         }
 
         .royal-title p {
             margin: 2px 0 0;
-            font-size: 0.6rem;
+            font-size: 0.7rem;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             color: #94a3b8;
-            font-weight: 700;
+            font-weight: 600;
         }
 
         .currency-stack {
@@ -111,36 +96,35 @@
         }
 
         .currency-card {
-            background: var(--card-bg);
-            border: 2px solid transparent;
-            border-radius: 25px;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
             padding: 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             backdrop-filter: blur(10px);
         }
 
         .currency-card.active {
-            background: rgba(197, 160, 33, 0.08);
+            background: rgba(212, 175, 55, 0.1);
             border-color: var(--gold-main);
-            box-shadow: 0 0 30px rgba(197, 160, 33, 0.15);
+            box-shadow: 0 10px 30px -5px rgba(212, 175, 55, 0.15);
         }
 
         .card-icon {
-            width: 55px;
-            height: 55px;
-            border-radius: 18px;
+            width: 50px;
+            height: 50px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-            font-weight: 900;
+            font-size: 1.3rem;
+            font-weight: 800;
             transition: transform 0.3s;
+            margin-left: 15px;
         }
 
         .currency-card:hover .card-icon {
@@ -148,41 +132,42 @@
         }
 
         .icon-syp {
-            background: rgba(197, 160, 33, 0.2);
+            background: rgba(212, 175, 55, 0.1);
             color: var(--gold-main);
+            border: 1px solid rgba(212, 175, 55, 0.2);
         }
 
         .icon-usd {
-            background: rgba(59, 130, 246, 0.2);
-            color: #3b82f6;
+            background: rgba(99, 102, 241, 0.1);
+            color: #818cf8;
+            border: 1px solid rgba(99, 102, 241, 0.2);
         }
 
         .card-info {
             flex: 1;
-            margin-right: 15px;
         }
 
         .card-info h3 {
             margin: 0;
-            font-size: 1.1rem;
-            font-weight: 900;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #e2e8f0;
         }
 
         .card-info p {
             margin: 2px 0 0;
             font-size: 0.7rem;
             color: #94a3b8;
-            font-weight: 700;
-        }
-
-        .card-balance {
-            text-align: left;
+            font-weight: 400;
         }
 
         .card-balance h4 {
             margin: 0;
-            font-size: 1.2rem;
-            font-weight: 950;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            /* Better for numbers */
         }
 
         /* Detail Section */
@@ -211,25 +196,36 @@
         }
 
         .main-balance-card {
-            background: linear-gradient(135deg, rgba(197, 160, 33, 0.15) 0%, rgba(10, 10, 11, 0.5) 100%);
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
             border: 1px solid var(--border-rgba);
-            border-radius: 40px;
-            padding: 40px;
+            border-radius: 32px;
+            padding: 40px 20px;
             position: relative;
             text-align: center;
             margin-bottom: 25px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+
+        .main-balance-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(to right, transparent, var(--gold-main), transparent);
+            opacity: 0.5;
         }
 
         .main-balance-card h2 {
-            font-size: 3.5rem;
-            font-weight: 950;
+            font-size: 3rem;
+            font-weight: 800;
             margin: 10px 0;
-            letter-spacing: -2px;
-            background: linear-gradient(to bottom, #FFF, var(--gold-main));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            font-family: 'Segoe UI', sans-serif;
         }
 
         .action-grid {
@@ -240,37 +236,41 @@
         }
 
         .p-btn {
-            padding: 18px;
-            border-radius: 20px;
+            padding: 16px;
+            border-radius: 18px;
             border: none;
-            font-weight: 900;
+            font-weight: 800;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
             cursor: pointer;
             transition: all 0.3s;
+            font-size: 0.95rem;
         }
 
         .btn-fill {
-            background: var(--gold-main);
-            color: #000;
+            background: linear-gradient(135deg, var(--gold-main), var(--gold-dark));
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(197, 160, 33, 0.3);
         }
 
         .btn-fill:hover {
-            background: var(--gold-light);
-            transform: translateY(-3px);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(197, 160, 33, 0.4);
+            filter: brightness(1.1);
         }
 
         .btn-outline {
             background: rgba(255, 255, 255, 0.03);
-            color: white;
+            color: #cbd5e1;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .btn-outline:hover {
             background: rgba(255, 255, 255, 0.08);
             border-color: var(--gold-main);
+            color: white;
         }
 
         /* Transactions */
@@ -279,18 +279,18 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
-            padding: 0 10px;
+            padding: 0 5px;
         }
 
         .history-title h3 {
             font-size: 1.1rem;
-            font-weight: 900;
-            color: var(--gold-main);
+            font-weight: 800;
+            color: #fff;
         }
 
         .tx-item {
-            background: var(--card-bg);
-            border-radius: 20px;
+            background: rgba(30, 41, 59, 0.4);
+            border-radius: 18px;
             padding: 15px;
             display: flex;
             align-items: center;
@@ -301,26 +301,27 @@
         }
 
         .tx-item:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(30, 41, 59, 0.8);
+            transform: translateX(-3px);
         }
 
         .tx-icon {
-            width: 45px;
-            height: 45px;
-            border-radius: 14px;
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
         .tx-type-plus {
-            background: rgba(0, 217, 165, 0.1);
-            color: #00D9A5;
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
         }
 
         .tx-type-minus {
             background: rgba(239, 68, 68, 0.1);
-            color: #EF4444;
+            color: #ef4444;
         }
 
         .tx-info {
@@ -329,93 +330,95 @@
 
         .tx-info h5 {
             margin: 0;
-            font-size: 0.85rem;
-            font-weight: 800;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #f1f5f9;
         }
 
         .tx-info p {
-            margin: 2px 0 0;
-            font-size: 0.65rem;
+            margin: 3px 0 0;
+            font-size: 0.7rem;
             color: #94a3b8;
-            font-weight: 600;
-        }
-
-        .tx-amount {
-            text-align: left;
         }
 
         .tx-amount .val {
-            font-weight: 900;
+            font-weight: 800;
             font-size: 1rem;
-        }
-
-        .tx-amount .status {
-            font-size: 0.5rem;
-            text-transform: uppercase;
-            color: #94a3b8;
-            display: block;
+            font-family: 'Segoe UI', sans-serif;
         }
 
         /* Modal */
         .modal {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(15px);
             z-index: 999;
             display: none;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         .modal-content {
-            background: #0F1015;
+            background: #1e293b;
             width: 100%;
-            max-width: 450px;
-            border-radius: 40px;
-            border: 1px solid var(--border-rgba);
+            max-width: 420px;
+            border-radius: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 30px;
             position: relative;
-            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
         }
 
         .form-label {
-            font-size: 0.7rem;
-            font-weight: 800;
-            color: #94a3b8;
-            margin-bottom: 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #cbd5e1;
+            margin-bottom: 8px;
             display: block;
-            padding: 0 10px;
+            padding: 0 5px;
         }
 
         .p-input {
             width: 100%;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 18px;
-            padding: 18px;
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 16px;
             color: white;
-            font-weight: 700;
+            font-weight: 600;
             outline: none;
             transition: 0.3s;
             box-sizing: border-box;
             margin-bottom: 20px;
+            font-size: 1rem;
         }
 
         .p-input:focus {
             border-color: var(--gold-main);
-            background: rgba(197, 160, 33, 0.05);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
         }
 
         .verified-badge {
-            background: rgba(197, 160, 33, 0.1);
-            border: 1px solid var(--border-rgba);
-            padding: 10px 15px;
-            border-radius: 15px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            padding: 12px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             margin-bottom: 20px;
             display: none;
         }
@@ -424,16 +427,23 @@
             position: absolute;
             top: 25px;
             left: 25px;
-            color: #666;
+            color: #94a3b8;
             cursor: pointer;
+            font-size: 1.2rem;
+            transition: 0.2s;
+        }
+
+        .btn-close:hover {
+            color: #fff;
+            transform: rotate(90deg);
         }
 
         @media (min-width: 1024px) {
             .wallet-screen {
                 display: grid;
-                grid-template-columns: 400px 1fr;
+                grid-template-columns: 380px 1fr;
                 gap: 40px;
-                max-width: 1200px;
+                max-width: 1100px;
                 margin: 0 auto;
                 padding-top: 40px;
             }
@@ -461,7 +471,11 @@
             <h1>المحفظة الملكية</h1>
             <p>Royal Digital Wallet</p>
         </div>
-        <div class="back-btn"><i class="fas fa-shield-alt" style="color: var(--gold-main);"></i></div>
+        <div class="back-btn" onclick="toggleNotifCenter()" style="position: relative;">
+            <i class="fas fa-bell" style="color: var(--gold-main);"></i>
+            <span id="wallet-badge"
+                style="display:none; position:absolute; top:-2px; right:-2px; background:red; width:8px; height:8px; border-radius:50%;"></span>
+        </div>
     </div>
 
     <div class="wallet-screen">
@@ -473,7 +487,7 @@
                     <p>Syrian Pound</p>
                 </div>
                 <div class="card-balance">
-                    <h4 id="side-balance-syp">0</h4>
+                    <h4 id="side-balance-syp" class="skeleton" style="min-width: 60px;">&nbsp;</h4>
                 </div>
             </div>
 
@@ -484,7 +498,7 @@
                     <p>US Dollar</p>
                 </div>
                 <div class="card-balance">
-                    <h4 id="side-balance-usd">0</h4>
+                    <h4 id="side-balance-usd" class="skeleton" style="min-width: 60px;">&nbsp;</h4>
                 </div>
             </div>
         </div>
@@ -494,7 +508,7 @@
             <div class="main-balance-card">
                 <p style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">رصيد الليرة
                     السورية</p>
-                <h2 id="main-balance-syp">0</h2>
+                <h2 id="main-balance-syp" class="skeleton" style="display:inline-block; min-width: 150px;">&nbsp;</h2>
                 <p style="font-size: 1rem; font-weight: 900; color: #94a3b8;">ليرة سورية</p>
             </div>
 
@@ -511,7 +525,11 @@
                     <h3>سجل العمليات</h3>
                     <span style="font-size: 0.7rem; font-weight: 800; color: #94a3b8;">عرض الكل</span>
                 </div>
-                <div id="tx-list-syp"></div>
+                <div id="tx-list-syp">
+                    <div class="skeleton" style="height: 50px; margin-bottom: 10px;"></div>
+                    <div class="skeleton" style="height: 50px; margin-bottom: 10px;"></div>
+                    <div class="skeleton" style="height: 50px; margin-bottom: 10px;"></div>
+                </div>
             </div>
         </div>
 
@@ -519,7 +537,7 @@
             <div class="main-balance-card">
                 <p style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">رصيد الدولار
                     الأمريكي</p>
-                <h2 id="main-balance-usd">0</h2>
+                <h2 id="main-balance-usd" class="skeleton" style="display:inline-block; min-width: 150px;">&nbsp;</h2>
                 <p style="font-size: 1rem; font-weight: 900; color: #94a3b8;">دولار أمريكي</p>
             </div>
 
@@ -610,6 +628,7 @@
     <script src="js/config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/notifications.js"></script>
+    <script src="js/realtime-sync.js"></script>
     <script>
         let activeCurrency = 'SYP';
 
@@ -678,7 +697,14 @@
 
                     if (res.ok) {
                         Notify.show("نجاح التحويل", `تم إرسال المبلغ بنجاح إلى ${receiverName}.`, "fas fa-check-double");
-                        setTimeout(() => window.location.reload(), 2000);
+
+                        // Clear Inputs
+                        document.getElementById('receiverPhone').value = '';
+                        document.getElementById('transferAmount').value = '';
+                        document.getElementById('receiverName').innerText = '...';
+                        document.getElementById('receiverVerified').style.display = 'none';
+
+                        setTimeout(() => window.location.reload(), 3000); // Increased timeout for sound
                     } else {
                         const data = await res.json();
                         alert("❌ فشل التحويل: " + (data.message || "خطأ غير معروف"));
@@ -744,9 +770,11 @@
 
             document.getElementById('side-balance-syp').innerText = syp.toLocaleString();
             document.getElementById('side-balance-usd').innerText = usd.toLocaleString();
-
             document.getElementById('main-balance-syp').innerText = syp.toLocaleString();
             document.getElementById('main-balance-usd').innerText = usd.toLocaleString();
+
+            // REMOVE SKELETONS
+            document.querySelectorAll('.skeleton').forEach(el => el.classList.remove('skeleton'));
 
             // Fetch Transactions from API
             try {
@@ -758,7 +786,44 @@
                 }
             } catch (e) {
                 console.error("Tx history load fail");
+                // Remove Skeleton list if failed to load
+                document.getElementById('tx-list-syp').innerHTML = '<div style="text-align:center;">لا يوجد بيانات (Offline)</div>';
             }
+        }
+
+        function toggleNotifCenter() {
+            const el = document.getElementById('notif-center');
+            const isHidden = el.style.display === 'none';
+            el.style.display = isHidden ? 'block' : 'none';
+
+            if (isHidden) {
+                renderNotificationHistory();
+                // Clear badge
+                const badge = document.getElementById('wallet-badge');
+                if (badge) badge.style.display = 'none';
+            }
+        }
+
+        function renderNotificationHistory() {
+            const list = document.getElementById('notif-list');
+            // Mock history for now or get from localStorage if implemented in notifications.js
+            const localHist = JSON.parse(localStorage.getItem('notif_history') || '[]');
+
+            if (localHist.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">لا توجد إشعارات جديدة</div>';
+                return;
+            }
+
+            list.innerHTML = localHist.map(n => `
+                <div class="notif-item">
+                    <i class="${n.icon || 'fas fa-bell'}"></i>
+                    <div>
+                        <h4>${n.title}</h4>
+                        <p>${n.message}</p>
+                        <span class="notif-time">${new Date(n.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                </div>
+            `).join('');
         }
 
         function renderTxs(list, elId) {

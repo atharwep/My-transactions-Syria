@@ -164,6 +164,7 @@
     <script src="js/config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/notifications.js"></script>
+    <script src="js/realtime-sync.js"></script>
     <script>
         let foundUser = null;
         let targetRole = null;
@@ -243,24 +244,25 @@
             btn.innerText = "جاري الحفظ...";
 
             try {
-                // Simulate Update
-                const users = Store.getUsers();
-                const idx = users.findIndex(u => u.phone === foundUser.phone);
-                if (idx !== -1) {
-                    users[idx].role = targetRole;
-                    Store.setUsers(users);
+                // Use generic updater that syncs to Cloud
+                const res = await Auth.updateUserRole(foundUser.phone, targetRole);
 
-                    // Update current user if it's the same
+                if (res.success) {
+                    // Update current user session if needed (if admin changes their own role)
                     if (Store.user && Store.user.phone === foundUser.phone) {
                         Store.user.role = targetRole;
                         localStorage.setItem('wusul_user', JSON.stringify(Store.user));
                     }
+
+                    Notify.show("تم التفعيل", `تم تحديث رتبة ${foundUser.name} بنجاح (Cloud Sync).`, "fas fa-check-circle");
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    throw new Error(res.message);
                 }
 
-                Notify.show("تم التفعيل", `تم تحديث رتبة ${foundUser.name} بنجاح.`, "fas fa-check-circle");
-                setTimeout(() => window.location.reload(), 1500);
             } catch (e) {
-                alert("خطأ في التحديث");
+                console.error(e);
+                alert("خطأ في التحديث: " + e.message);
                 btn.disabled = false;
                 btn.innerText = "تفعيل الرتبة الآن";
             }

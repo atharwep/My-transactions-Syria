@@ -45,27 +45,49 @@ const Store = {
     },
 
     updateUserBalance: async (phone, amount, currency, title, performedByRole = 'USER') => {
-        const users = Store.getUsers();
-        const idx = users.findIndex(u => u.phone === phone);
-        if (idx === -1) return { success: false, message: "المستخدم غير موجود" };
+        let users = Store.getUsers();
+        let idx = users.findIndex(u => u.phone === phone);
+        let userToUpdate = null;
+
+        // 1. Check Local
+        if (idx !== -1) {
+            userToUpdate = users[idx];
+        }
+        // 2. Check Cloud (Firebase) if not found locally
+        else if (typeof FirebaseDB !== 'undefined') {
+            const cloudRes = await FirebaseDB.users.get(phone);
+            if (cloudRes.success) {
+                userToUpdate = cloudRes.data;
+                // Ideally we cache this user locally now to keep sync
+                users.push(userToUpdate);
+                idx = users.length - 1;
+            }
+        }
+
+        if (!userToUpdate) return { success: false, message: "المستخدم غير موجود" };
 
         if (amount > 0 && performedByRole !== 'ADMIN' && performedByRole !== 'AGENT') {
             return { success: false, message: "غير مسموح لك بشحن الرصيد." };
         }
 
+        // Calculate New Balance
         if (currency === 'USD') {
-            users[idx].balanceUSD = (users[idx].balanceUSD || 0) + amount;
+            userToUpdate.balanceUSD = (userToUpdate.balanceUSD || 0) + amount;
         } else {
-            users[idx].balanceSYP = (users[idx].balanceSYP || 0) + amount;
+            userToUpdate.balanceSYP = (userToUpdate.balanceSYP || 0) + amount;
         }
 
-        Store.setUsers(users);
+        // Save Local (Now we are valid index)
+        if (idx !== -1) {
+            users[idx] = userToUpdate;
+            Store.setUsers(users);
+        }
 
         // 🔥 SYNC TO FIREBASE IMMEDIATELY
         if (typeof FirebaseDB !== 'undefined') {
             await FirebaseDB.users.update(phone, {
-                balanceUSD: users[idx].balanceUSD,
-                balanceSYP: users[idx].balanceSYP
+                balanceUSD: userToUpdate.balanceUSD,
+                balanceSYP: userToUpdate.balanceSYP
             });
             console.log('✅ Balance synced to Firebase in real-time');
         }
@@ -77,7 +99,7 @@ const Store = {
             amount: amount,
             currency: currency,
             title: title,
-            date: new Date().toLocaleString('ar-SY')
+            date: new Date().toISOString()
         };
         txs.unshift(newTx);
         Store.setData('transactions', txs);
@@ -87,13 +109,18 @@ const Store = {
             await FirebaseDB.transactions.create(newTx);
         }
 
+        // 🔥 REALTIME NOTIFICATION
+        if (typeof Notify !== 'undefined' && Notify.send) {
+            Notify.send(phone, "تحديث الرصيد 💰", `تم ${amount > 0 ? 'إيداع' : 'سحب'} ${Math.abs(amount)} ${currency} ${amount > 0 ? 'في' : 'من'} رصيدك.`, "fas fa-wallet");
+        }
+
         if (Store.user && Store.user.phone === phone) {
-            Store.user.balanceUSD = users[idx].balanceUSD;
-            Store.user.balanceSYP = users[idx].balanceSYP;
+            Store.user.balanceUSD = userToUpdate.balanceUSD;
+            Store.user.balanceSYP = userToUpdate.balanceSYP;
             localStorage.setItem('wusul_user', JSON.stringify(Store.user));
         }
 
-        return { success: true, newBalance: currency === 'USD' ? users[idx].balanceUSD : users[idx].balanceSYP };
+        return { success: true, newBalance: currency === 'USD' ? userToUpdate.balanceUSD : userToUpdate.balanceSYP };
     },
 
     approveDoctor: async (phone) => {
@@ -115,6 +142,11 @@ const Store = {
                 users[uIdx].role = 'DOCTOR';
                 users[uIdx].isVerified = true;
                 Store.setUsers(users);
+            }
+
+            // 🔥 NOTIFY DOCTOR
+            if (typeof Notify !== 'undefined' && Notify.send) {
+                Notify.send(phone, "مبروك! تم اعتماد حسابك 🎉", "تم تفعيل حساب الطبيب الخاص بك والقائمة الآن تظهر للمرضى.", "fas fa-user-md");
             }
             return { success: true, message: "تم اعتماد الطبيب بنجاح" };
         }
@@ -273,33 +305,68 @@ const SMS = {
 // ================= AUTH =================
 const Auth = {
     login: async (phone, password) => {
-        const user = Store.getUsers().find(u => u.phone === phone && u.password === password);
-        if (user) {
-            // التحقق من الهوية إذا كانت مفعلة من لوحة التحكم
+        // 1. Try Local Storage first
+        let user = Store.getUsers().find(u => u.phone === phone);
+
+        // 2. If not found locally, try Firebase (Cloud Fallback)
+        if (!user && typeof FirebaseDB !== 'undefined') {
+            console.log('🔍 User not found locally, checking Firebase...');
+            const cloudRes = await FirebaseDB.users.get(phone);
+            if (cloudRes.success) {
+                user = cloudRes.data;
+                // Save to local for next time
+                const users = Store.getUsers();
+                users.push(user);
+                Store.setUsers(users);
+                console.log('✅ User retrieved from Cloud and cached locally.');
+            }
+        }
+
+        if (user && user.password === password) {
+            // Check verification status
             if (CONFIG.REQUIRE_IDENTITY_VERIFICATION && !user.isVerified && user.role !== 'ADMIN') {
-                return { success: false, message: "حسابك قيد المراجعة. يرجى انتظار تأقق الهوية من قبل الإدارة." };
+                return { success: false, message: "حسابك قيد المراجعة. يرجى انتظار تأكيد الهوية من قبل الإدارة." };
             }
             return { success: true, user };
         }
-        return { success: false, message: "بيانات الدخول غير صحيحة" };
+
+        return { success: false, message: "بيانات الدخول غير صحيحة أو الحساب غير موجود" };
     },
 
     register: async (name, phone, password, role = 'USER', kycData = {}) => {
+        // 1. Check Local Existence
         const users = Store.getUsers();
         if (users.find(u => u.phone === phone))
-            return { success: false, message: "رقم الهاتف مستخدم" };
+            return { success: false, message: "رقم الهاتف مستخدم مسبقاً (محلي)" };
+
+        // 2. Check Cloud Existence
+        if (typeof FirebaseDB !== 'undefined') {
+            const cloudCheck = await FirebaseDB.users.get(phone);
+            if (cloudCheck.success) {
+                return { success: false, message: "رقم الهاتف مستخدم مسبقاً (سحابي)" };
+            }
+        }
 
         const user = {
             id: Date.now(),
             name, phone, password, role,
             balanceUSD: 0, balanceSYP: 0,
             avatar: kycData.avatar || "assets/nuser.png",
-            idCardImage: kycData.idCardImage || null, // صورة الهوية
-            isVerified: !CONFIG.REQUIRE_IDENTITY_VERIFICATION, // موثق تلقائياً إذا كان الخيار معطلاً
+            idCardImage: kycData.idCardImage || null, // ID Image
+            isVerified: !CONFIG.REQUIRE_IDENTITY_VERIFICATION, // Auto-verify if option disabled
             registeredAt: new Date().toISOString()
         };
+
+        // 3. Save to Local Storage
         users.push(user);
         Store.setUsers(users);
+
+        // 4. Save to Firebase Cloud
+        if (typeof FirebaseDB !== 'undefined') {
+            await FirebaseDB.users.create(user);
+            console.log('✅ New user registered and synced to Cloud.');
+        }
+
         return { success: true, user };
     },
 
@@ -364,6 +431,9 @@ const Auth = {
         }
         Store.user = user;
 
+        // 🔥 Trigger Realtime Sync
+        window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: { user } }));
+
         // Sync to Cloud (Google Sheets)
         if (typeof CloudDB !== 'undefined') {
             await CloudDB.call('register', user);
@@ -378,6 +448,9 @@ const Auth = {
         } catch (e) {
             console.warn("Logout sync failed:", e);
         }
+
+        // 🔥 Stop Realtime Sync
+        window.dispatchEvent(new CustomEvent('userLoggedOut'));
 
         if (typeof SecurityManager !== 'undefined') {
             SecurityManager.clearSession();
@@ -427,39 +500,112 @@ const Auth = {
         }
     },
 
-    findUserByPhone: async (phone) => Store.getUsers().find(u => u.phone === phone) || null,
+    findUserByPhone: async (phone) => {
+        // 1. Try Local Search
+        let user = Store.getUsers().find(u => u.phone === phone);
+        if (user) return user;
 
-    makeAdmin: (phone) => {
+        // 2. Try Cloud Search (Firebase)
+        if (typeof FirebaseDB !== 'undefined') {
+            console.log(`🔍 User ${phone} not found locally, searching Cloud...`);
+            const res = await FirebaseDB.users.get(phone);
+            if (res.success) {
+                // Return cloud user without saving to local list to avoid huge array
+                // Ideally, we should sync, but for search purpose, returning is enough
+                return res.data;
+            }
+        }
+        return null;
+    },
+
+    makeAdmin: async (phone) => {
         const users = Store.getUsers();
         const idx = users.findIndex(u => u.phone === phone);
+
+        // Local Update if found
         if (idx !== -1) {
             users[idx].role = 'ADMIN';
             Store.setUsers(users);
-            return { success: true, message: "تم الترقية لمدير نظام بنجاح 🔱" };
         }
-        return { success: false, message: "المستهدف غير موجود" };
+
+        // Cloud Update
+        if (typeof FirebaseDB !== 'undefined') {
+            await FirebaseDB.users.update(phone, { role: 'ADMIN' });
+            return { success: true, message: "تم الترقية لمدير نظام بنجاح (Cloud Sync) 🔱" };
+        }
+
+        return idx !== -1
+            ? { success: true, message: "تم الترقية لمدير نظام بنجاح (Local) 🔱" }
+            : { success: false, message: "المستهدف غير موجود محلياً" };
     },
 
-    activateAgent: (phone) => {
+    activateAgent: async (phone) => {
         const users = Store.getUsers();
         const idx = users.findIndex(u => u.phone === phone);
+
         if (idx !== -1) {
             users[idx].role = 'AGENT';
             Store.setUsers(users);
-            return { success: true, message: "تم تفعيل حساب الوكيل بنجاح ✅" };
         }
-        return { success: false, message: "المستهدف غير موجود" };
+
+        // Cloud Update
+        if (typeof FirebaseDB !== 'undefined') {
+            await FirebaseDB.users.update(phone, { role: 'AGENT' });
+            // 🔥 NOTIFY AGENT
+            if (typeof Notify !== 'undefined' && Notify.send) {
+                Notify.send(phone, "ترقية الحساب 💼", "تم تفعيل حسابك كوكيل معتمد بنجاح.", "fas fa-briefcase");
+            }
+            return { success: true, message: "تم تفعيل حساب الوكيل بنجاح (Cloud Sync) ✅" };
+        }
+
+        return idx !== -1
+            ? { success: true, message: "تم تفعيل حساب الوكيل بنجاح (Local) ✅" }
+            : { success: false, message: "المستهدف غير موجود محلياً" };
     },
 
-    resetToUser: (phone) => {
+    resetToUser: async (phone) => {
         const users = Store.getUsers();
         const idx = users.findIndex(u => u.phone === phone);
+
         if (idx !== -1) {
             users[idx].role = 'USER';
             Store.setUsers(users);
-            return { success: true, message: "تمت إعادة الحساب لمستخدم عادي" };
         }
-        return { success: false, message: "المستهدف غير موجود" };
+
+        // Cloud Update
+        if (typeof FirebaseDB !== 'undefined') {
+            await FirebaseDB.users.update(phone, { role: 'USER' });
+            return { success: true, message: "تم إعادة الحساب لمستخدم عادي (Cloud Sync)" };
+        }
+
+        return idx !== -1
+            ? { success: true, message: "تمت إعادة الحساب لمستخدم عادي (Local)" }
+            : { success: false, message: "المستهدف غير موجود محلياً" };
+    },
+
+    // Generic Role Updater
+    updateUserRole: async (phone, role) => {
+        const users = Store.getUsers();
+        const idx = users.findIndex(u => u.phone === phone);
+
+        if (idx !== -1) {
+            users[idx].role = role;
+            Store.setUsers(users);
+        }
+
+        if (typeof FirebaseDB !== 'undefined') {
+            await FirebaseDB.users.update(phone, { role: role });
+            // 🔥 NOTIFY USER
+            if (typeof Notify !== 'undefined' && Notify.send) {
+                const roleNames = { 'ADMIN': 'مدير النظام', 'AGENT': 'وكيل', 'DOCTOR': 'طبيب', 'USER': 'مستخدم' };
+                Notify.send(phone, "تغيير الرتبة 🛡️", `تم تحديث رتبة حسابك إلى: ${roleNames[role] || role}`, "fas fa-id-badge");
+            }
+            return { success: true, message: `تم تحديث دور المستخدم إلى ${role} بنجاح (Cloud Sync)` };
+        }
+
+        return idx !== -1
+            ? { success: true, message: `تم تحديث دور المستخدم إلى ${role} بنجاح (Local)` }
+            : { success: false, message: "لم يتم العثور على المستخدم" };
     },
 
     approveDoctor: (phone) => Store.approveDoctor(phone),
@@ -483,6 +629,12 @@ const Auth = {
         };
         bookings.unshift(newBooking);
         Store.setData('bookings', bookings);
+
+        // 🔥 NOTIFY DOCTOR
+        if (typeof Notify !== 'undefined' && Notify.send) {
+            const docPhone = bookingData.doctorPhone;
+            Notify.send(docPhone, "حجز جديد 📅", `لديك طلب حجز جديد من ${bookingData.patientName}`, "fas fa-calendar-check");
+        }
 
         return { success: true, message: "تم إرسال طلب الحجز للطبيب بنجاح." };
     },
@@ -512,6 +664,13 @@ const Auth = {
         if (bIdx !== -1) {
             bookings[bIdx].status = 'REJECTED';
             Store.setData('bookings', bookings);
+
+            // 🔥 NOTIFY PATIENT
+            if (typeof Notify !== 'undefined' && Notify.send) {
+                const booking = bookings[bIdx];
+                Notify.send(booking.patientPhone, "تحديث الحجز ❌", `نعتذر، تم رفض طلب الحجز مع د. ${booking.doctorName || 'الطبيب'}`, "fas fa-calendar-times");
+            }
+
             return { success: true, message: "تم رفض طلب الحجز." };
         }
         return { success: false };
@@ -525,18 +684,52 @@ const UI = {
         if (!navRight) return;
 
         if (Store.user) {
+            const user = Store.user;
             navRight.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <a href="profile.html" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
-                        <img src="${Store.user.avatar || 'assets/nuser.png'}" 
-                             style="width: 35px; height: 35px; border-radius: 10px; border: 2px solid var(--gold); object-fit: cover;">
-                        <span style="color: white; font-weight: 800; font-size: 0.85rem;">${Store.user.name.split(' ')[0]}</span>
-                    </a>
-                    <button onclick="Auth.logout()" class="btn btn-outline" 
-                            style="padding: 8px 15px; font-size: 0.8rem; border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.05);">
-                        خروج 🚪
-                    </button>
+                <div class="user-dropdown-container" style="position: relative; display: inline-block;">
+                    <div onclick="document.getElementById('user-dropdown').classList.toggle('show')" 
+                         style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <img src="${user.avatar || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'}" 
+                             style="width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover;">
+                        <div style="color: white; font-weight: 800; font-size: 0.85rem;">
+                            ${user.name.split(' ')[0]} <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-right: 3px;"></i>
+                        </div>
+                    </div>
+                    
+                    <div id="user-dropdown" class="dropdown-content" style="display: none; position: absolute; left: 0; top: 45px; background: #1e293b; min-width: 160px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); z-index: 1000; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                        <a href="profile.html" style="color: white; padding: 12px 16px; text-decoration: none; display: block; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <i class="fas fa-user-circle" style="margin-left: 8px; color: var(--gold);"></i> الملف الشخصي
+                        </a>
+                        ${user.role === 'ADMIN' ? `
+                        <a href="admin-panel.html" style="color: white; padding: 12px 16px; text-decoration: none; display: block; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <i class="fas fa-shield-alt" style="margin-left: 8px; color: #4A90E2;"></i> الإدارة
+                        </a>` : ''}
+                        <a href="#" onclick="Auth.logout()" style="color: #ef4444; padding: 12px 16px; text-decoration: none; display: block; font-size: 0.9rem;">
+                            <i class="fas fa-sign-out-alt" style="margin-left: 8px;"></i> خروج
+                        </a>
+                    </div>
                 </div>
+                
+                <style>
+                    .dropdown-content a:hover {background-color: rgba(255,255,255,0.05);}
+                    .show {display: block !important; animation: fadeIn 0.2s;}
+                    @keyframes fadeIn {from {opacity:0; transform:translateY(-10px);} to {opacity:1; transform:translateY(0);}}
+                </style>
+                
+                <script>
+                    // Close dropdown when clicking outside
+                    window.onclick = function(event) {
+                        if (!event.target.matches('.user-dropdown-container') && !event.target.closest('.user-dropdown-container')) {
+                            var dropdowns = document.getElementsByClassName("dropdown-content");
+                            for (var i = 0; i < dropdowns.length; i++) {
+                                var openDropdown = dropdowns[i];
+                                if (openDropdown.classList.contains('show')) {
+                                    openDropdown.classList.remove('show');
+                                }
+                            }
+                        }
+                    }
+                </script>
             `;
         } else {
             navRight.innerHTML = `

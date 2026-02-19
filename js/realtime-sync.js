@@ -29,6 +29,7 @@ const RealtimeSync = {
         this.listenToDoctors();
         this.listenToTransactions();
         this.listenToBookings();
+        this.listenToNotifications(); // 🔥 New: Listen for real notifications
 
         this.isInitialized = true;
         console.log('✅ Real-time Sync initialized successfully');
@@ -137,6 +138,36 @@ const RealtimeSync = {
                 console.log('📅 Bookings updated in real-time');
             }
         });
+    },
+
+    /**
+     * Listen to notifications in real-time
+     */
+    listenToNotifications: function () {
+        if (!Store.user) return;
+
+        // Use limitToLast to avoid fetching entire history
+        const notifRef = firebaseDB.ref(`notifications/${Store.user.phone}`).orderByChild('timestamp').limitToLast(10);
+
+        this.listeners.notifications = notifRef.on('child_added', (snapshot) => {
+            if (snapshot.exists()) {
+                const notif = snapshot.val();
+
+                // Timestamp Handling:
+                // Server timestamp is reliable. Client Date.now() might vary.
+                // We show notifications from the last 2 minutes to allow for some network delay/clock skew,
+                // but prevent showing very old alerts on reload.
+                const now = Date.now();
+                const diff = now - (notif.timestamp || now);
+                const isRecent = diff < 120000; // 2 Minutes window
+
+                if (isRecent && typeof Notify !== 'undefined') {
+                    Notify.show(notif.title, notif.message, notif.icon || 'fas fa-bell');
+                }
+            }
+        });
+
+        console.log('🔔 Notifications listener attached (Last 10)');
     },
 
     /**

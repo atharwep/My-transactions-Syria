@@ -311,6 +311,27 @@
                                 </div>
                             </div>
 
+                            <!-- System Settings -->
+                            <div
+                                style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 25px; border: 1px solid var(--border-rgba); margin-bottom: 25px;">
+                                <h4 style="color: var(--gold); margin-bottom: 15px; font-weight: 950;">⚙️ إعدادات النظام
+                                </h4>
+
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <div>
+                                        <p
+                                            style="font-size: 0.9rem; font-weight: 800; color: white; margin-bottom: 5px;">
+                                            توثيق الهوية الإلزامي (KYC)</p>
+                                        <p style="font-size: 0.7rem; color: #94a3b8;">إجبار المستخدمين الجدد على رفع
+                                            الهوية والسيلفي</p>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="kyc-toggle" onchange="toggleKYC(this)">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+
                             <hr style="margin: 25px 0; border: none; border-top: 1px solid rgba(255,255,255,0.1);">
 
                             <!-- Financial Reports Link -->
@@ -448,6 +469,9 @@
                 if (res.success) {
                     showResult(`تم ${actionText} ${amountText} بنجاح للمستخدم ${user.name} ✅`, true);
                     Notify.show("نجاح العملية", `تم ${actionText} الرصيد لـ ${user.name} بنجاح.`, "fas fa-cash-register");
+
+                    // Clear inputs
+                    document.getElementById('admin-points').value = '';
                 } else {
                     showResult(res.message, false);
                 }
@@ -474,27 +498,48 @@
             }
 
             // Search User UI Helper
-            function searchUserUI() {
+            async function searchUserUI() {
                 const query = document.getElementById('user-search-input').value;
                 const resultsDiv = document.getElementById('user-search-results');
-                if (query.length < 2) { resultsDiv.style.display = 'none'; return; }
-                const results = Store.searchUsers(query);
+                if (query.length < 2) {
+                    resultsDiv.style.display = 'none';
+                    return;
+                }
+
+                // 1. Local Search
+                let results = Store.searchUsers(query);
+
+                // 2. Cloud Fallback (if phone number)
+                if (results.length === 0 && query.length >= 9 && !isNaN(query)) {
+                    // Show loading indicator
+                    resultsDiv.style.display = 'block';
+                    resultsDiv.innerHTML = `<div style="padding: 10px; color: #94a3b8; text-align: center;">بحث في السحابة...</div>`;
+
+                    const cloudUser = await Auth.findUserByPhone(query);
+                    if (cloudUser) {
+                        results = [cloudUser];
+                    }
+                }
+
                 if (results.length > 0) {
                     resultsDiv.style.display = 'block';
-                    resultsDiv.style.background = 'rgba(255,255,255,0.08)'; // Clearer background
+                    resultsDiv.style.background = 'rgba(0,0,0,0.8)'; // Darker background for visibility
                     resultsDiv.style.border = '1px solid var(--gold)';
                     resultsDiv.innerHTML = results.map(u => `
                     <div onclick="selectUser('${u.phone}', '${u.name}')" 
-                         style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: 0.2s;"
-                         onmouseover="this.style.background='rgba(197, 160, 33, 0.1)'"
+                         style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center;"
+                         onmouseover="this.style.background='rgba(197, 160, 33, 0.2)'"
                          onmouseout="this.style.background='transparent'">
-                        <div style="font-weight: 900; color: white;">${u.name}</div>
-                        <div style="font-size: 0.75rem; color: var(--gold);">${u.phone} • <span style="color:white; opacity:0.6;">${u.role}</span></div>
+                        <div>
+                            <div style="font-weight: 900; color: white; font-size: 0.9rem;">${u.name}</div>
+                            <div style="font-size: 0.75rem; color: #94a3b8;">${u.phone}</div>
+                        </div>
+                        <span style="font-size: 0.7rem; background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 10px; color: var(--gold);">${u.role}</span>
                     </div>
                 `).join('');
                 } else {
                     resultsDiv.style.display = 'block';
-                    resultsDiv.innerHTML = `<div style="padding: 15px; color: #94a3b8; text-align: center; font-weight:800;">❌ لا يوجد نتائج مطابقة</div>`;
+                    resultsDiv.innerHTML = `<div style="padding: 15px; color: #f87171; text-align: center; font-weight:800;">❌ لا يوجد نتائج مطابقة</div>`;
                 }
             }
 

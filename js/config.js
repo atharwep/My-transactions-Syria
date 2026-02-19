@@ -20,7 +20,7 @@ const CONFIG = {
     GOOGLE_SHEET_BRIDGE_URL: "https://script.google.com/macros/s/AKfycbyquvnYpkMw6bsgwL7VA1SBRPXCo_WlgAfi9CBJV6YHAjHTHnk55Zssqj9-yheGCj1h/exec",
 
     // إعدادات التحقق من الهوية (يمكن للمسؤول تغييرها)
-    REQUIRE_IDENTITY_VERIFICATION: true,
+    REQUIRE_IDENTITY_VERIFICATION: false,
 
     // وضع المطور
     DEBUG_MODE: false

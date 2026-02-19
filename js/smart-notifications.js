@@ -87,41 +87,41 @@ const SmartNotifications = {
     showLocationDiscovery: (lat, lon, cityName) => {
         if (typeof Notify === 'undefined') return;
 
-        Notify.show(
-            `أنت الآن في نطاق ${cityName}`,
-            `تم تحديث قائمة الصيدليات التكسي والطوارئ في ${cityName} وكامل المنطقة المحيطة بك 📍`,
-            "fas fa-location-crosshairs"
-        );
+        // Notify.show(
+        //     `أنت الآن في نطاق ${cityName}`,
+        //     `تم تحديث قائمة الصيدليات التكسي والطوارئ في ${cityName} وكامل المنطقة المحيطة بك 📍`,
+        //     "fas fa-location-crosshairs"
+        // );
 
-        // Simulation of available local services
-        setTimeout(() => {
-            Notify.show(
-                "طلب تكسي في " + cityName,
-                `يوجد 4 كابتن تكسي متوفرين في ${cityName} حالياً. زمن الوصول المتوقع: 5 دقائق 🚕`,
-                "fas fa-taxi"
-            );
-        }, 5000);
+        // // Simulation of available local services
+        // setTimeout(() => {
+        //     Notify.show(
+        //         "طلب تكسي في " + cityName,
+        //         `يوجد 4 كابتن تكسي متوفرين في ${cityName} حالياً. زمن الوصول المتوقع: 5 دقائق 🚕`,
+        //         "fas fa-taxi"
+        //     );
+        // }, 5000);
 
-        setTimeout(() => {
-            Notify.show(
-                "خدمة الصيدليات",
-                `تم رصد صيدلية مناوبة قريبة جداً من موقعك في ${cityName}. هل تود عرض الخريطة؟ 💊`,
-                "fas fa-pills"
-            );
-        }, 12000);
+        // setTimeout(() => {
+        //     Notify.show(
+        //         "خدمة الصيدليات",
+        //         `تم رصد صيدلية مناوبة قريبة جداً من موقعك في ${cityName}. هل تود عرض الخريطة؟ 💊`,
+        //         "fas fa-pills"
+        //     );
+        // }, 12000);
     },
 
     checkTimeEvents: () => {
-        const city = SmartNotifications.detectedCity || "موقعك الحالي";
-        const events = [
-            { title: "تحديث الصيدليات", msg: `قام نظامنا بتحديث قائمة الصيدليات المناوبة في ${city} لفترة الليل.`, icon: "fas fa-pills" },
-            { title: "جاهزية الطوارئ", msg: `أقرب مشفى طوارئ في ${city} هو 'المشفى التخصصي'. تم حفظ الموقع في المفضلة.`, icon: "fas fa-hospital-symbol" }
-        ];
+        // const city = SmartNotifications.detectedCity || "موقعك الحالي";
+        // const events = [
+        //     { title: "تحديث الصيدليات", msg: `قام نظامنا بتحديث قائمة الصيدليات المناوبة في ${city} لفترة الليل.`, icon: "fas fa-pills" },
+        //     { title: "جاهزية الطوارئ", msg: `أقرب مشفى طوارئ في ${city} هو 'المشفى التخصصي'. تم حفظ الموقع في المفضلة.`, icon: "fas fa-hospital-symbol" }
+        // ];
 
-        const event = events[Math.floor(Math.random() * events.length)];
-        if (typeof Notify !== 'undefined' && SmartNotifications.lastCoords) {
-            Notify.show(event.title, event.msg, event.icon);
-        }
+        // const event = events[Math.floor(Math.random() * events.length)];
+        // if (typeof Notify !== 'undefined' && SmartNotifications.lastCoords) {
+        //     Notify.show(event.title, event.msg, event.icon);
+        // }
     },
 
     triggerEmergencyBroadCast: (userName) => {

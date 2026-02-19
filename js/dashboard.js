@@ -249,4 +249,42 @@ document.addEventListener('DOMContentLoaded', () => {
             Dashboard.renderPendingDoctors();
         }
     });
+
+    // Initialize Settings Toggles
+    if (Store.user && Store.user.role === 'ADMIN') {
+        const kycToggle = document.getElementById('kyc-toggle');
+        if (kycToggle && typeof firebaseDB !== 'undefined') {
+            // Load current state
+            firebaseDB.ref('settings/kyc_required').once('value', (snapshot) => {
+                const isRequired = snapshot.val();
+                // If null, default to config default (which is now false)
+                kycToggle.checked = (isRequired === null) ? CONFIG.REQUIRE_IDENTITY_VERIFICATION : isRequired;
+            });
+        }
+    }
 });
+
+// System Settings Logic
+window.toggleKYC = (checkbox) => {
+    const isRequired = checkbox.checked;
+
+    if (typeof firebaseDB !== 'undefined') {
+        firebaseDB.ref('settings/kyc_required').set(isRequired)
+            .then(() => {
+                Notify.show("تم تحديث الإعدادات", `تم ${isRequired ? 'تفعيل' : 'تعطيل'} إلزامية توثيق الهوية.`, "fas fa-cogs");
+            })
+            .catch(err => {
+                console.error(err);
+                if (err.code === 'PERMISSION_DENIED') {
+                    Notify.show("تنبيه صلاحيات", "يرجى الإذن بالكتابة في 'settings' في قواعد Firebase", "fas fa-lock");
+                    // We allow the toggle visually but warn user
+                    alert("لإصلاح هذا الخطأ نهائياً، يرجى الذهاب إلى Firebase Console > Realtime Database > Rules وإضافة:\n\n\"settings\": { \".read\": true, \".write\": true }");
+                } else {
+                    Notify.show("خطأ", "فشل تحديث الإعدادات: " + err.message, "fas fa-exclamation-triangle");
+                    checkbox.checked = !isRequired; // Revert only on unknown error
+                }
+            });
+    } else {
+        alert("Firebase غير متصل. لا يمكن حفظ الإعدادات.");
+    }
+};
